@@ -5,7 +5,6 @@
 
 :root {
   font-family: Inter, sans-serif;
-
 }
 @supports (font-variation-settings: normal) {
   /* Use variable font if supported */

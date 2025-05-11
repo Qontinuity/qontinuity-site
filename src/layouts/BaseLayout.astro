@@ -1,7 +1,11 @@
 ---
 import BaseHead from "@/components/BaseHead.astro";
-import Navigation from "@/components/global/Navigation.astro"
-import Footer from "@/components/global/Footer.astro"
+import Navigation from "@/components/global/Navigation.astro";
+import Footer from "@/components/global/Footer.astro";
+
+// Props pour contrôler l'espace sous le header fixe (offsetTopPx en pixels) et l'affichage du footer
+export let hideFooter = false;
+export let offsetTopPx: string = '0px';
 ---
 
 <html lang="en" class="scroll-smooth selection:bg-black selection:text-white">
@@ -10,9 +14,18 @@ import Footer from "@/components/global/Footer.astro"
   </head>
   <body class="bg-zinc-100 flex flex-col min-h-screen mx-auto 2xl:max-w-screen-xl relative">
 
-    <Navigation/>
-    <main class="flex-grow"><slot /></main>
-    <Footer/>
+    <!-- Navigation (header) -->
+    <Navigation />
 
+    <!-- Main content with dynamic padding-top -->
+    <main
+      class="flex-grow"
+      style={`padding-top: ${offsetTopPx};`}
+    >
+      <slot />
+    </main>
+
+    <!-- Footer conditionnel -->
+    { !hideFooter && <Footer /> }
   </body>
 </html>

@@ -1,0 +1,55 @@
+// .eslintrc.cjs
+module.exports = {
+    root: true,
+  
+    // Ces dossiers ne seront jamais lintés
+    ignorePatterns: ['node_modules/', '.astro/', '.vscode/', 'sauvegarde/'],
+  
+    // Parser TS pour tous les .js/.ts/.json.ts
+    parser: '@typescript-eslint/parser',
+    parserOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'module',
+    },
+  
+    extends: [
+      'eslint:recommended',
+      'plugin:@typescript-eslint/recommended',
+      'plugin:prettier/recommended',
+      'plugin:astro/recommended'
+    ],
+  
+    plugins: ['@typescript-eslint', 'prettier'],
+  
+    rules: {
+      'prettier/prettier': 'error',
+    },
+  
+    overrides: [
+      {
+        // ✅ Pour parser les Astro files
+        files: ['**/*.astro'],
+        parser: 'astro-eslint-parser',
+        parserOptions: {
+          parser: '@typescript-eslint/parser',
+          extraFileExtensions: ['.astro'],
+        },
+        extends: ['plugin:astro/recommended'],
+      },
+      {
+        // 🔧 Désactiver la règle triple-slash dans env.d.ts
+        files: ['src/env.d.ts'],
+        rules: {
+          '@typescript-eslint/triple-slash-reference': 'off',
+        },
+      },
+      {
+        // ⚠️ Assouplir le any dans ton lib Strapi
+        files: ['src/lib/strapi.ts'],
+        rules: {
+          '@typescript-eslint/no-explicit-any': 'warn',
+        },
+      },
+    ],
+  };
+  

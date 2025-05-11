@@ -1,0 +1,29 @@
+---
+// src/components/landing/FormationCard.astro
+export interface Props {
+  formation: {
+    id: number;
+    titre: string;
+    slug: string;
+    niveau: string;
+    duree: string;
+    lieu: string;
+    mode: string;
+    prixTTC: number;
+  };
+}
+const { formation } = Astro.props;
+---
+<a
+  href={`/formations/${formation.slug}`}
+  class="block border rounded-2xl p-6 shadow hover:shadow-lg transition flex flex-col"
+>
+  <h3 class="text-xl font-semibold mb-2">{formation.titre}</h3>
+  <div class="mb-2 text-sm text-zinc-600">
+    <div>Niveau : {formation.niveau}</div>
+    <div>Durée : {formation.duree}</div>
+    <div>Lieu : {formation.lieu}</div>
+    <div>Mode : {formation.mode}</div>
+  </div>
+  <div class="mt-auto font-bold">{formation.prixTTC} € TTC</div>
+</a>

@@ -6,7 +6,6 @@ export const byName: string[] = [
   "Website templates",
   "Convert to Tailwind CSS",
   "Convert to Astro",
-
 ];
 
-export const devwork = byName.map(title => ({ title }));
+export const devwork = byName.map((title) => ({ title }));

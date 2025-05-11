@@ -1,0 +1,45 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Hero           from '@/components/landing/Hero.astro';
+import { getCategories, getCategorieBySlug } from '@/lib/strapi';
+
+// Génère les chemins statiques pour chaque slug
+export async function getStaticPaths() {
+  const cats = await getCategories();
+  return cats.map(cat => ({ params: { slug: cat.slug } }));
+}
+
+// Récupère les données pour chaque slug
+const { slug } = Astro.params;
+const categorie = await getCategorieBySlug(slug);
+if (!categorie) throw new Error(`Catégorie introuvable : ${slug}`);
+---
+<BaseLayout>
+  <!-- Bannière Hero -->
+  <Hero />
+
+  <article class="max-w-4xl mx-auto py-16 px-4 md:px-6 lg:px-8">
+    <!-- Titre de la catégorie -->
+    <h1 class="text-4xl font-bold mb-6">{categorie.nom}</h1>
+    <!-- Description riche -->
+    <div class="prose mb-12" set:html={categorie.descriptionHtml} />
+
+    <!-- Cartes des formations associées -->
+    {categorie.formations && categorie.formations.length > 0 ? (
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {categorie.formations.map(f => (
+          <a
+            href={`/formations/${f.slug}`}
+            key={f.id}
+            class="block border rounded-2xl p-6 hover:shadow-lg transition"
+          >
+            <h3 class="text-xl font-semibold mb-2">{f.titre}</h3>
+            <p class="text-indigo-600 hover:underline mt-auto">En savoir plus →</p>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <p class="text-center text-gray-500">Aucune formation trouvée pour cette catégorie.</p>
+    )}
+  </article>
+</BaseLayout>

@@ -1,0 +1,54 @@
+---
+const { categories = [] } = Astro.props;
+---
+
+<section class="my-16 space-y-12">
+  {categories.map((cat) => {
+    /* Les champs sont au 1er niveau : cat.Nom, cat.formations, etc. */
+    return (
+      <div>
+        <h2 class="text-3xl font-bold mb-4">
+          {cat.Nom ?? cat.nom ?? "Sans titre"}
+        </h2>
+
+        {cat.formations?.length ? (
+          <ul class="space-y-6">
+            {cat.formations.map((f) => (
+              <li class="border p-4 rounded-lg">
+                <h3 class="text-xl font-semibold">{f.titre}</h3>
+
+                {/* Modalités */}
+                {f.modalites?.length && (
+                  <p class="mt-2 text-sm">
+                    <span class="font-medium">Modes&nbsp;:</span>
+                    {f.modalites.map((m) => m.libelle).join(", ")}
+                  </p>
+                )}
+
+                {/* Sessions */}
+                {f.sessions?.length ? (
+                  <ul class="mt-2 text-sm list-disc pl-5">
+                    {f.sessions.map((s) => (
+                      <li>
+                        {new Date(s.date).toLocaleDateString("fr-FR")} —{" "}
+                        {s.heure_debut} → {s.heure_fin} ({s.modalite})
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p class="mt-2 text-sm italic text-zinc-500">
+                    Aucune session planifiée.
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="italic text-zinc-500">
+            Aucune formation dans cette catégorie.
+          </p>
+        )}
+      </div>
+    );
+  })}
+</section>
