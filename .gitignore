@@ -33,3 +33,7 @@ pnpm-debug.log*
 *.swp
 *.tmp
 Thumbs.db
+
+# Ignorer le cache Astro et les réglages VSCode
+.astro/
+.vscode/
