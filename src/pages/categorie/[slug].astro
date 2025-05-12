@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import Hero           from '@/components/landing/Hero.astro';
+import Hero from '@/components/landing/Hero.astro';
 import { getCategories, getCategorieBySlug } from '@/lib/strapi';
 
 // Génère les chemins statiques pour chaque slug
@@ -16,26 +16,68 @@ if (!categorie) throw new Error(`Catégorie introuvable : ${slug}`);
 ---
 <BaseLayout>
   <!-- Bannière Hero -->
-  <Hero />
+ <Hero logoClass="w-80 max-w-none" />
 
-  <article class="max-w-4xl mx-auto py-16 px-4 md:px-6 lg:px-8">
+  <article class="max-w-6xl mx-auto py-16 px-4 md:px-6 lg:px-8">
     <!-- Titre de la catégorie -->
     <h1 class="text-4xl font-bold mb-6">{categorie.nom}</h1>
     <!-- Description riche -->
-    <div class="prose mb-12" set:html={categorie.descriptionHtml} />
+    <div class="prose max-w-none mb-12" set:html={categorie.descriptionHtml} />
 
     <!-- Cartes des formations associées -->
     {categorie.formations && categorie.formations.length > 0 ? (
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         {categorie.formations.map(f => (
-          <a
-            href={`/formations/${f.slug}`}
-            key={f.id}
-            class="block border rounded-2xl p-6 hover:shadow-lg transition"
-          >
-            <h3 class="text-xl font-semibold mb-2">{f.titre}</h3>
-            <p class="text-indigo-600 hover:underline mt-auto">En savoir plus →</p>
-          </a>
+     <a
+  href={`/formations/${f.slug}`}
+  key={f.id}
+  class="block border rounded-2xl p-6 hover:shadow-lg transition"
+>
+  <h3 class="text-xl font-semibold mb-2">{f.titre}</h3>
+
+  <!-- Niveau de départ -->
+  {f.niveauDepart && (
+    <p class="text-xs italic text-zinc-500 mb-2">
+      Niveau de départ&nbsp;: {f.niveauDepart}
+    </p>
+  )}
+
+  <!-- Description -->
+  <div
+    class="text-sm text-zinc-600 prose mb-4"
+    set:html={f.descriptionHtml}
+  />
+
+  <!-- IA étudiées -->
+  {f.IA_etudiees && (
+    <p class="text-sm text-zinc-500 italic mb-2 flex items-center gap-2">
+  <img
+    src="https://qontinuity-formations.eu/images/Qontinuity_logo_IA.svg"
+    alt=""
+    class="w-4 h-4 shrink-0"
+    loading="lazy"
+  />
+  {f.IA_etudiees}
+</p>
+  )}
+
+  <!-- Badges Durée + Tarif -->
+  <div class="space-x-2 mb-4">
+    {f.duree && (
+      <span class="inline-block bg-zinc-800 text-white text-xs px-3 py-1 rounded-full">
+        {f.duree}
+      </span>
+    )}
+    {f.prixTtc && (
+      <span class="inline-block bg-zinc-800 text-white text-xs px-3 py-1 rounded-full">
+        Tarif&nbsp;: {f.prixTtc}&nbsp;€
+      </span>
+    )}
+  </div>
+
+  <p class="text-indigo-600 hover:underline mt-auto">En savoir plus →</p>
+</a>
+
         ))}
       </div>
     ) : (

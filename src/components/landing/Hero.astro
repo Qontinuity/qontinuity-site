@@ -1,7 +1,35 @@
-<section class="relative flex items-center justify-center py-24 overflow-hidden">
-  <img
-    src="https://qontinuity-formations.eu/images/Qontinuity%20logo%20home.svg"
-    alt="qontinuity"
-    class="w-full max-w-[1200px] px-4"
-  />
-</section>;
+---
+interface Props {
+  /** Titre dynamique, optionnel */
+  title?: string;
+  /** Sous-titre dynamique, optionnel */
+  subtitle?: string;
+  /** URL d'image de fond, optionnelle */
+  bgImage?: string;
+  /** Classes CSS pour le logo en mode statique (override complet) */
+  logoClass?: string;
+}
+const { title, subtitle, bgImage, logoClass } = Astro.props;
+---
+
+<section
+  class={`relative flex items-center justify-center overflow-hidden ${
+    title ? 'pt-20 bg-cover bg-center' : 'py-24'
+  }`}
+  style={
+    title && bgImage ? `background-image: url('${bgImage}');` : undefined
+  }
+>
+  {title ? (
+    <div class="max-w-4xl mx-auto text-center py-24 md:py-32">
+      <h1 class="text-4xl md:text-6xl font-bold text-white mb-4">{title}</h1>
+      {subtitle && <p class="text-lg md:text-2xl text-zinc-200">{subtitle}</p>}
+    </div>
+  ) : (
+    <img
+      src="https://qontinuity-formations.eu/images/Qontinuity%20logo%20home.svg"
+      alt="qontinuity"
+      class={logoClass ? logoClass : 'px-4 w-full max-w-[1200px]'}
+    />
+  )}
+</section>

@@ -1,7 +1,7 @@
 // src/lib/strapi.ts
 
 // Base URL de ton Strapi (préfixé VITE_ dans .env)
-const BASE = import.meta.env.VITE_STRAPI_URL;
+export const BASE = import.meta.env.VITE_STRAPI_URL;
 
 /**
  * Convertit des blocs rich-text Strapi en HTML.
@@ -53,7 +53,7 @@ export async function getCategories() {
 export async function getCategorieBySlug(slug: string) {
   const res = await fetch(
     `${BASE}/api/categories?filters[slug][$eq]=${slug}&populate=formations`,
-  );
+  );  
   if (!res.ok) {
     throw new Error(`Strapi getCategorieBySlug error: ${res.status}`);
   }
@@ -75,14 +75,21 @@ export async function getCategorieBySlug(slug: string) {
     ? raw.formations
     : (raw.formations?.data ?? []);
 
-  const formations = formsRaw.map((f: any) => {
-    const fa = f.attributes ?? f;
-    return {
-      id: f.id,
-      titre: fa.titre || "",
-      slug: fa.slug || "",
-    };
-  });
+    const formations = formsRaw.map((f: any) => {
+      const fa = f.attributes ?? f;
+      return {
+        id: f.id,
+        titre: fa.titre || "",
+        slug: fa.slug || "",
+        niveauDepart: fa.Niveau_de_depart || "",
+        duree: fa.duree || "",
+        prixTtc: fa.prix_ttc || "",
+        IA_etudiees: fa.IA_etudiees || "",
+        descriptionHtml: richTextToHtml(
+          Array.isArray(fa.description) ? fa.description : [],
+        ),
+      };
+    });
 
   return {
     id: item.id,
@@ -139,6 +146,38 @@ export async function getFormationsByCategorySlug(slug: string) {
       id: item.id,
       titre: raw.titre || "",
       slug: raw.slug || "",
+
     };
   });
+}
+/**
+ * Récupère le détail d’une formation par son slug.
+ */
+export async function getFormationBySlug(slug: string) {
+  const res = await fetch(
+    `${BASE}/api/formations` +
+      `?filters[slug][$eq]=${slug}` +
+      `&populate=*`,
+  );
+  if (!res.ok) {
+    throw new Error(`Strapi getFormationBySlug error: ${res.status}`);
+  }
+  const { data } = await res.json();
+  if (!Array.isArray(data) || data.length === 0) return null;
+
+  const item: any = data[0];
+  const fa = item.attributes ?? item;
+
+  return {
+    id: item.id,
+    titre: fa.titre || "",
+    slug: fa.slug || "",
+    niveauDepart: fa.Niveau_de_depart || "",
+    duree: fa.duree || "",
+    prixTtc: fa.prix_ttc || "",
+    iaEtudiees: fa.IA_etudiees || "",
+    descriptionHtml: richTextToHtml(
+      Array.isArray(fa.description) ? fa.description : [],
+    ),
+  };
 }

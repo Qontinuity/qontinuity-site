@@ -10,12 +10,19 @@ import Pricing        from '@/components/landing/Pricing.astro';
 import Faq            from '@/components/landing/Faq.astro';
 import Cta            from '@/components/global/Cta.astro';
 
-import { getCategories, getActionBlocks } from '@/lib/strapi';
+// On importe aussi BASE pour le log
+import { BASE, getCategories, getActionBlocks } from '@/lib/strapi';
 
+// Affiche la valeur de BASE pour être sûr qu’on pointe sur le bon Strapi
+console.log('🔗 Strapi Base URL =', BASE);
+
+// On récupère les données
 const [categories, actionBlocks] = await Promise.all([
   getCategories(),
   getActionBlocks(),
 ]);
+
+
 ---
 <BaseLayout>
   <Hero />
