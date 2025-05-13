@@ -3,12 +3,10 @@ import BaseLayout     from '@/layouts/BaseLayout.astro';
 import Hero           from '@/components/landing/Hero.astro';
 import ActionBlocks   from '@/components/landing/ActionBlocks.astro';
 import CategoriesHome from '@/components/landing/CategoriesHome.astro';
-import Howitworks     from '@/components/landing/Howitworks.astro';
-import AllScope       from '@/components/landing/AllScope.astro';
-import Testimonials   from '@/components/landing/Testimonials.astro';
-import Pricing        from '@/components/landing/Pricing.astro';
 import Faq            from '@/components/landing/Faq.astro';
-import Cta            from '@/components/global/Cta.astro';
+import { getFaqs } from '../lib/strapi';
+
+
 
 // On importe aussi BASE pour le log
 import { BASE, getCategories, getActionBlocks } from '@/lib/strapi';
@@ -21,7 +19,7 @@ const [categories, actionBlocks] = await Promise.all([
   getCategories(),
   getActionBlocks(),
 ]);
-
+const faqs = await getFaqs();    // ← Ajout de l’appel à getFaqs()
 
 ---
 <BaseLayout>
@@ -44,11 +42,6 @@ const [categories, actionBlocks] = await Promise.all([
 
   <!-- Blocs de catégories (Strapi) -->
   <CategoriesHome categories={categories} />
+   <Faq faqs={faqs} />
 
-  <Howitworks />
-  <AllScope />
-  <Testimonials />
-  <Pricing />
-  <Faq />
-  <Cta />
 </BaseLayout>

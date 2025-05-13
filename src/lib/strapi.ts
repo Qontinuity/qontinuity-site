@@ -4,18 +4,39 @@
 export const BASE = import.meta.env.VITE_STRAPI_URL;
 
 /**
- * Convertit des blocs rich-text Strapi en HTML.
+ * Convertit un contenu Rich Text (blocks) Strapi en HTML,
+ * en gérant les marques gras, italique, souligné, barré et liens.
  */
 function richTextToHtml(blocks: any[] = []): string {
   return blocks
     .map((block) => {
-      if (block.type === "paragraph") {
-        const text = (block.children || [])
-          .map((child: any) => child.text || "")
-          .join("");
-        return `<p>${text}</p>`;
+      const childrenHtml = (block.children || [])
+        .map((child: any) => {
+          let txt = (child.text || "").replace(/\r?\n/g, "<br/>");
+          if (child.bold) txt = `<strong>${txt}</strong>`;
+          if (child.italic) txt = `<em>${txt}</em>`;
+          if (child.underline) txt = `<u>${txt}</u>`;
+          if (child.strikethrough) txt = `<s>${txt}</s>`;
+          if (child.href) {
+            txt = `<a href="${child.href}" class="text-indigo-600 hover:underline">${txt}</a>`;
+          }
+          return txt;
+        })
+        .join("");
+
+      switch (block.type) {
+        case "paragraph":
+          return `<p>${childrenHtml.trim() ? childrenHtml : "<br/>"}</p>`;
+        case "heading":
+          // si tu utilises différents niveaux, adapte block.level
+          return `<h3 class="text-xl font-semibold my-4">${childrenHtml}</h3>`;
+        case "list":
+          // block.style peut être "ordered" ou "bullet"
+          const tag = block.style === "ordered" ? "ol" : "ul";
+          return `<${tag} class="list-inside list-disc mb-4">${childrenHtml}</${tag}>`;
+        default:
+          return childrenHtml; // fallback brut
       }
-      return "";
     })
     .join("");
 }
@@ -103,6 +124,26 @@ export async function getCategorieBySlug(slug: string) {
 /**
  * Récupère les blocs d’action depuis Strapi.
  */
+// ---------- FAQ --------------------
+export async function getFaqs() {
+  const res = await fetch(
+    `${BASE}/api/faqs?pagination[pageSize]=100`
+  );
+  if (!res.ok) {
+    throw new Error(`Strapi getFaqs error: ${res.status}`);
+  }
+  const { data } = await res.json();
+  return (data || []).map((item: any) => {
+    const raw = item.attributes ?? item;
+    return {
+      id: item.id,
+      question: raw.question || "",
+      answerHtml: richTextToHtml(Array.isArray(raw.answer) ? raw.answer : []),
+    };
+  });
+}
+// ---------- FIN helper FAQs -----------
+
 export async function getActionBlocks() {
   const res = await fetch(
     `${BASE}/api/action-blocks?sort[0]=ordre:asc&pagination[pageSize]=100`,
@@ -131,6 +172,9 @@ export async function getActionBlocks() {
 /**
  * (Fallback) Récupère les formations par slug de catégorie.
  */
+
+// ---------- FIN helper formation ----------
+
 export async function getFormationsByCategorySlug(slug: string) {
   const res = await fetch(
     `${BASE}/api/formations?filters[categorie][slug][$eq]=${slug}` +
@@ -155,18 +199,31 @@ export async function getFormationsByCategorySlug(slug: string) {
  */
 export async function getFormationBySlug(slug: string) {
   const res = await fetch(
-    `${BASE}/api/formations` +
-      `?filters[slug][$eq]=${slug}` +
-      `&populate=*`,
+    `${BASE}/api/formations?filters[slug][$eq]=${slug}&populate=*`
   );
+
   if (!res.ok) {
     throw new Error(`Strapi getFormationBySlug error: ${res.status}`);
   }
   const { data } = await res.json();
+  console.log('DEBUG sessions brut →', JSON.stringify(data, null, 2));
   if (!Array.isArray(data) || data.length === 0) return null;
 
   const item: any = data[0];
   const fa = item.attributes ?? item;
+
+  // ─── Récupération des sessions liées ───
+const sessionsRaw = Array.isArray(fa.sessions) ? fa.sessions : [];
+const sessions = sessionsRaw.map((s: any) => ({
+  id: s.id,
+  date: s.date,
+  heure_debut: s.heure_debut,
+  heure_fin: s.heure_fin,
+  mode: s.mode,
+  // transforme le rich-text du lieu en HTML
+  lieu: richTextToHtml(Array.isArray(s.lieu) ? s.lieu : []),
+}));
+
 
   return {
     id: item.id,
@@ -176,6 +233,7 @@ export async function getFormationBySlug(slug: string) {
     duree: fa.duree || "",
     prixTtc: fa.prix_ttc || "",
     iaEtudiees: fa.IA_etudiees || "",
+    sessions,
     descriptionHtml: richTextToHtml(
       Array.isArray(fa.description) ? fa.description : [],
     ),

@@ -1,0 +1,97 @@
+---
+import Layout from '../../layouts/BaseLayout.astro';
+import Hero from '@/components/landing/Hero.astro';
+import { getFormationBySlug } from '../../lib/strapi';
+
+/*  ─────────────────────────────────────────────
+    On rend la page en mode SSR (pas de prerender)
+   ───────────────────────────────────────────── */
+export const prerender = false;
+
+const { params } = Astro;
+const formation = await getFormationBySlug(params.slug);
+
+if (!formation) {
+  throw new Error('Formation introuvable');
+}
+---
+
+<Layout title={formation.titre}>
+<!-- Bannière Hero -->
+ <Hero logoClass="w-80 max-w-none" />
+ 
+
+  <section class="max-w-3xl mx-auto px-4 py-16">
+    <h1 class="text-3xl font-bold mb-6">{formation.titre}</h1>
+
+    <!-- Description riche -->
+    <div class="prose prose-slate max-w-none mb-10"
+         set:html={formation.descriptionHtml} />
+
+
+</div>
+
+
+
+    <!-- Infos synthétiques -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
+      <div><strong>Durée&nbsp;:</strong> {formation.duree}</div>
+      <div><strong>Prix TTC&nbsp;:</strong> {formation.prixTtc} €</div>
+      <div><strong>Niveau&nbsp;:</strong> {formation.niveauDepart}</div>
+      <div><strong>IA étudiées&nbsp;:</strong> {formation.iaEtudiees}</div>
+    </div>
+
+<!-- ─── Dates des sessions ─── -->
+{formation.sessions.length > 0 ? (
+  <div class="grid gap-6 sm:grid-cols-1 md:grid-cols-2 mb-12">
+    {formation.sessions.map((s) => (
+      <article
+        key={s.id}
+        class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition flex flex-col"
+      >
+        <!-- Badge date -->
+        <div class="flex justify-center mb-6">
+          <span class="bg-black text-white rounded-lg px-6 py-2 text-xl font-bold">
+            {new Date(s.date).toLocaleDateString('fr-FR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            })}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-grow">
+          <div>
+            <h3 class="font-medium text-sm text-gray-600 mb-1">Heure</h3>
+            <p>{s.heure_debut} – {s.heure_fin}</p>
+          </div>
+          <div>
+            <h3 class="font-medium text-sm text-gray-600 mb-1">Mode</h3>
+            <p>{s.mode}</p>
+          </div>
+          <div class="sm:col-span-2">
+            <h3 class="font-medium text-sm text-gray-600 mb-1">Lieu</h3>
+            <div set:html={s.lieu} class="prose prose-sm"></div>
+          </div>
+        </div>
+
+        <!-- Bouton centré en bas de la carte -->
+        <div class="mt-6 text-center">
+          <button
+            class="bg-[#bf2b34] text-white px-6 py-2 rounded hover:bg-[#a1242d] transition"
+          >
+            S'inscrire
+          </button>
+        </div>
+      </article>
+    ))}
+  </div>
+) : (
+  <p class="italic text-zinc-600">Aucune session programmée pour l’instant.</p>
+)}
+
+
+    <!-- Placeholder pour le futur formulaire -->
+    <div id="inscription-placeholder"></div>
+  </section>
+</Layout>
