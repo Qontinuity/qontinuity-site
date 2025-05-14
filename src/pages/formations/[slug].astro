@@ -28,7 +28,9 @@ const updatedAtFr = new Date(formation.updatedAt)
  
 
  <section class="w-full max-w-screen-lg mx-auto px-4 py-16">
-    <h1 class="text-3xl font-bold mb-6">{formation.titre}</h1>
+  <h1 class="text-3xl font-bold mb-6 text-[#bf2b34]">
+    {formation.titre}
+  </h1>
 
     <!-- Description riche -->
     <div class="prose prose-slate max-w-none mb-10"
@@ -39,13 +41,35 @@ const updatedAtFr = new Date(formation.updatedAt)
 
 
 
-    <!-- Infos synthétiques -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
-      <div><strong>Durée&nbsp;:</strong> {formation.duree}</div>
-      <div><strong>Prix TTC&nbsp;:</strong> {formation.prixTtc} €</div>
-      <div><strong>Niveau&nbsp;:</strong> {formation.niveauDepart}</div>
-      <div><strong>IA étudiées&nbsp;:</strong> {formation.iaEtudiees}</div>
+   <!-- Carte “Infos synthétiques” -->
+<div class="bg-white rounded-2xl shadow-md p-6 mb-12 max-w-screen-lg mx-auto">
+  <h2 class="text-lg font-semibold mb-4 text-center">Informations clés</h2>
+
+<!-- Ligne de séparation -->
+  <hr class="border-t border-gray-200 mb-6" />
+
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="space-y-1">
+      <p class="text-sm text-zinc-500">Durée</p>
+      <p class="font-medium">{formation.duree}</p>
     </div>
+    <div class="space-y-1">
+      <p class="text-sm text-zinc-500">Prix TTC</p>
+      <p class="font-medium">{formation.prixTtc} €</p>
+    </div>
+    <div class="space-y-1">
+      <p class="text-sm text-zinc-500">Niveau</p>
+      <p class="font-medium">{formation.niveauDepart}</p>
+    </div>
+    <div class="space-y-1">
+      <p class="text-sm text-zinc-500">IA étudiées</p>
+      <p class="font-medium text-sm">{formation.iaEtudiees}</p>
+    </div>
+  </div>
+</div>
+
+
 
 <!-- ─── Dates des sessions ─── -->
 {formation.sessions.length > 0 ? (

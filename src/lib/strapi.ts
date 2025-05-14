@@ -13,20 +13,38 @@ function richTextToHtml(blocks: any[] = []): string {
   let listTag = "ul";
 
   blocks.forEach((block) => {
-    // 1️⃣ Génère le HTML des enfants avec marques + hard breaks
-    const childrenHtml = (block.children || [])
-      .map((child: any) => {
-        let txt = (child.text || "").replace(/\r?\n/g, "<br/>");
-        if (child.bold)          txt = `<strong>${txt}</strong>`;
-        if (child.italic)        txt = `<em>${txt}</em>`;
-        if (child.underline)     txt = `<u>${txt}</u>`;
-        if (child.strikethrough) txt = `<s>${txt}</s>`;
-        if (child.href) {
-          txt = `<a href="${child.href}" class="text-indigo-600 hover:underline">${txt}</a>`;
-        }
-        return txt;
-      })
+  /// 1️⃣ Génère le HTML des enfants avec marques + hard breaks
+const childrenHtml = (block.children || [])
+.map((child: any) => {
+  // Si c'est un nœud “link”, on utilise son url et son texte interne
+  if (child.type === "link") {
+    // Strapi peut exposer l'URL sous data.uri ou attrs.href ou url
+    const href =
+      child.url ||
+      child.data?.uri ||
+      child.attrs?.href ||
+      child.attributes?.href;
+    // Concatène tout le texte enfant du lien
+    const linkText = (child.children || [])
+      .map((c: any) => c.text || "")
       .join("");
+    return `<a href="${href}" class="text-indigo-600 hover:underline">${linkText}</a>`;
+  }
+
+  // Sinon, on traite comme du texte simple
+  let txt = (child.text || "").replace(/\r?\n/g, "<br/>");
+
+  // Styles
+  if (child.bold)          txt = `<strong>${txt}</strong>`;
+  if (child.italic)        txt = `<em>${txt}</em>`;
+  if (child.underline)     txt = `<u>${txt}</u>`;
+  if (child.strikethrough) txt = `<s>${txt}</s>`;
+
+  return txt;
+})
+.join("");
+
+
 
     switch (block.type) {
       case "paragraph":

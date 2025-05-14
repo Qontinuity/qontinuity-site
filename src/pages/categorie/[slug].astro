@@ -33,7 +33,10 @@ if (!categorie) throw new Error(`Catégorie introuvable : ${slug}`);
   key={f.id}
   class="block border rounded-2xl p-6 hover:shadow-lg transition"
 >
-  <h3 class="text-xl font-semibold mb-2">{f.titre}</h3>
+  <h3 class="text-xl font-semibold mb-2 text-[#bf2b34]">
+  {f.titre}
+</h3>
+
 
   <!-- Niveau de départ -->
   {f.niveauDepart && (
@@ -75,13 +78,13 @@ if (!categorie) throw new Error(`Catégorie introuvable : ${slug}`);
     )}
   </div>
 
-  <p class="text-indigo-600 hover:underline mt-auto">En savoir plus →</p>
+  <p class="text-[#bf2b34] hover:underline mt-auto">En savoir plus →</p>
 </a>
 
         ))}
       </div>
     ) : (
-      <p class="text-center text-gray-500">Aucune formation trouvée pour cette catégorie.</p>
+      <p class="text-center text-gray-500">Aucune formation n'est encore programmée pour cette catégorie.</p>
     )}
   </article>
 </BaseLayout>
