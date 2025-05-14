@@ -5,41 +5,99 @@ export const BASE = import.meta.env.VITE_STRAPI_URL;
 
 /**
  * Convertit un contenu Rich Text (blocks) Strapi en HTML,
- * en gérant les marques gras, italique, souligné, barré et liens.
+ * en gérant les marques, paragraphes, titres, et listes.
  */
 function richTextToHtml(blocks: any[] = []): string {
-  return blocks
-    .map((block) => {
-      const childrenHtml = (block.children || [])
-        .map((child: any) => {
-          let txt = (child.text || "").replace(/\r?\n/g, "<br/>");
-          if (child.bold) txt = `<strong>${txt}</strong>`;
-          if (child.italic) txt = `<em>${txt}</em>`;
-          if (child.underline) txt = `<u>${txt}</u>`;
-          if (child.strikethrough) txt = `<s>${txt}</s>`;
-          if (child.href) {
-            txt = `<a href="${child.href}" class="text-indigo-600 hover:underline">${txt}</a>`;
-          }
-          return txt;
-        })
-        .join("");
+  let html = "";
+  let inList = false;
+  let listTag = "ul";
 
-      switch (block.type) {
-        case "paragraph":
-          return `<p>${childrenHtml.trim() ? childrenHtml : "<br/>"}</p>`;
-        case "heading":
-          // si tu utilises différents niveaux, adapte block.level
-          return `<h3 class="text-xl font-semibold my-4">${childrenHtml}</h3>`;
-        case "list":
-          // block.style peut être "ordered" ou "bullet"
-          const tag = block.style === "ordered" ? "ol" : "ul";
-          return `<${tag} class="list-inside list-disc mb-4">${childrenHtml}</${tag}>`;
-        default:
-          return childrenHtml; // fallback brut
-      }
-    })
-    .join("");
+  blocks.forEach((block) => {
+    // 1️⃣ Génère le HTML des enfants avec marques + hard breaks
+    const childrenHtml = (block.children || [])
+      .map((child: any) => {
+        let txt = (child.text || "").replace(/\r?\n/g, "<br/>");
+        if (child.bold)          txt = `<strong>${txt}</strong>`;
+        if (child.italic)        txt = `<em>${txt}</em>`;
+        if (child.underline)     txt = `<u>${txt}</u>`;
+        if (child.strikethrough) txt = `<s>${txt}</s>`;
+        if (child.href) {
+          txt = `<a href="${child.href}" class="text-indigo-600 hover:underline">${txt}</a>`;
+        }
+        return txt;
+      })
+      .join("");
+
+    switch (block.type) {
+      case "paragraph":
+        // ferme une liste ouverte avant un paragraphe
+        if (inList) {
+          html += `</${listTag}>\n`;
+          inList = false;
+        }
+        html += `<p>${childrenHtml.trim() ? childrenHtml : "<br/>"}</p>\n`;
+        break;
+
+      case "heading":
+        if (inList) {
+          html += `</${listTag}>\n`;
+          inList = false;
+        }
+        html += `<h3 class="text-xl font-semibold my-4">${childrenHtml}</h3>\n`;
+        break;
+
+        case "list": {
+          // Strapi utilise `format` = "unordered" | "ordered`
+          const tag       = block.format === "ordered" ? "ol" : "ul";
+          // on ajoute ml-6 pour l'indent, space-y-2 pour espacer chaque <li>
+          const listClass = block.format === "ordered"
+            ? "list-decimal ml-6 space-y-2"
+            : "list-disc ml-6 space-y-2";
+        
+          const itemsHtml = (block.children || [])
+            .map((item: any) => {
+              const itemHtml = (item.children || [])
+                .map((child: any) => {
+                  let txt = (child.text || "").replace(/\r?\n/g, "<br/>");
+                  if (child.bold)          txt = `<strong>${txt}</strong>`;
+                  if (child.italic)        txt = `<em>${txt}</em>`;
+                  if (child.underline)     txt = `<u>${txt}</u>`;
+                  if (child.strikethrough) txt = `<s>${txt}</s>`;
+                  if (child.href) {
+                    txt = `<a href="${child.href}" class="text-indigo-600 hover:underline">${txt}</a>`;
+                  }
+                  return txt;
+                })
+                .join("");
+              return `<li>${itemHtml}</li>`;
+            })
+            .join("\n");
+        
+          html += `<${tag} class="${listClass} mb-4">
+        ${itemsHtml}
+        </${tag}>\n`;
+          break;
+        }
+        
+
+      default:
+        // ferme la liste si un autre bloc arrive
+        if (inList) {
+          html += `</${listTag}>\n`;
+          inList = false;
+        }
+        html += childrenHtml;
+    }
+  });
+
+  // en fin de tableau, ferme la liste si besoin
+  if (inList) {
+    html += `</${listTag}>\n`;
+  }
+
+  return html;
 }
+
 
 /**
  * Récupère toutes les catégories depuis Strapi.
@@ -211,6 +269,11 @@ export async function getFormationBySlug(slug: string) {
 
   const item: any = data[0];
   const fa = item.attributes ?? item;
+  /// DEBUG : afficher la structure brute du champ programme
+  console.log(
+    "DEBUG Strapi resume blocks →",
+    JSON.stringify(fa.resume, null, 2)
+  );
 
   // ─── Récupération des sessions liées ───
 const sessionsRaw = Array.isArray(fa.sessions) ? fa.sessions : [];
@@ -234,8 +297,18 @@ const sessions = sessionsRaw.map((s: any) => ({
     prixTtc: fa.prix_ttc || "",
     iaEtudiees: fa.IA_etudiees || "",
     sessions,
+    // ─── Champs Qualiopi ───
+  resumeHtml: richTextToHtml(Array.isArray(fa.resume) ? fa.resume : []),
+  publicConcerneHtml: richTextToHtml(Array.isArray(fa.public_concerne) ? fa.public_concerne : []),
+  objectifsHtml: richTextToHtml(Array.isArray(fa.objectifs) ? fa.objectifs : []),
+  programmeHtml: richTextToHtml(Array.isArray(fa.programme) ? fa.programme : []),
+  evaluationHtml: richTextToHtml(Array.isArray(fa.processus_evaluation) ? fa.processus_evaluation : []),
+  moyensPedagogiquesHtml: richTextToHtml(Array.isArray(fa.moyens_pedagogiques) ? fa.moyens_pedagogiques : []),
+  handicapHtml: richTextToHtml(Array.isArray(fa.handicap) ? fa.handicap : []),
     descriptionHtml: richTextToHtml(
       Array.isArray(fa.description) ? fa.description : [],
     ),
+    // ─── EXPOSER updatedAt pour la page Astro ───
+    updatedAt: fa.updatedAt,
   };
 }
