@@ -1,9 +1,10 @@
 ---
 const { categories = [] } = Astro.props;
+
 ---
 
 <section class="my-16 space-y-12">
-  {categories.map((cat) => {
+  {sortedCategories.map((cat) => {
     /* Les champs sont au 1er niveau : cat.Nom, cat.formations, etc. */
     return (
       <div>

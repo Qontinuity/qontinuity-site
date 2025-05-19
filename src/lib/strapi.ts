@@ -124,12 +124,14 @@ const childrenHtml = (block.children || [])
 export async function getCategories() {
   const res = await fetch(
     `${BASE}/api/categories?sort[0]=ordre:asc&pagination[pageSize]=100`,
+    
   );
   if (!res.ok) {
     throw new Error(`Strapi getCategories error: ${res.status}`);
   }
   const { data } = await res.json();
   return (data || []).map((item: any) => {
+    
     // raw pointe soit vers attributes, soit vers item lui-même
     const raw = item.attributes ?? item;
     return {
@@ -181,6 +183,7 @@ export async function getCategorieBySlug(slug: string) {
         niveauDepart: fa.Niveau_de_depart || "",
         duree: fa.duree || "",
         prixTtc: fa.prix_ttc || "",
+        prixHt: fa.prix_ht || "",   // ← nouveau
         IA_etudiees: fa.IA_etudiees || "",
         descriptionHtml: richTextToHtml(
           Array.isArray(fa.description) ? fa.description : [],
@@ -282,16 +285,11 @@ export async function getFormationBySlug(slug: string) {
     throw new Error(`Strapi getFormationBySlug error: ${res.status}`);
   }
   const { data } = await res.json();
-  console.log('DEBUG sessions brut →', JSON.stringify(data, null, 2));
   if (!Array.isArray(data) || data.length === 0) return null;
 
   const item: any = data[0];
   const fa = item.attributes ?? item;
   /// DEBUG : afficher la structure brute du champ programme
-  console.log(
-    "DEBUG Strapi resume blocks →",
-    JSON.stringify(fa.resume, null, 2)
-  );
 
   // ─── Récupération des sessions liées ───
 const sessionsRaw = Array.isArray(fa.sessions) ? fa.sessions : [];
@@ -312,6 +310,7 @@ const sessions = sessionsRaw.map((s: any) => ({
     slug: fa.slug || "",
     niveauDepart: fa.Niveau_de_depart || "",
     duree: fa.duree || "",
+    prixHt:         fa.prix_ht || "",   // ← nouveau
     prixTtc: fa.prix_ttc || "",
     iaEtudiees: fa.IA_etudiees || "",
     sessions,
@@ -330,3 +329,102 @@ const sessions = sessionsRaw.map((s: any) => ({
     updatedAt: fa.updatedAt,
   };
 }
+
+
+export async function getArticles() {
+  const res = await fetch(
+    `${BASE}/api/articles?populate=*&sort[0]=date_publication:desc`
+  );
+  if (!res.ok) {
+    throw new Error(`Strapi getArticles error: ${res.status}`);
+  }
+  const { data } = await res.json();
+
+  return (data || []).map((item: any) => {
+    // 1️⃣ Tenter de récupérer les attributs media
+    const imgData =
+      item.image?.data?.attributes   // cas “standard” Strapi v4
+      ?? item.image;                 // ou cas où image=attributes
+  
+    // 2️⃣ Choisir d’abord la version “medium”, sinon l’URL originale
+    const rawUrl =
+      imgData?.formats?.medium?.url
+      ?? imgData?.url
+      ?? "";
+  
+    // 3️⃣ Construire l’URL absolue si nécessaire
+    const imageUrl = rawUrl
+      ? rawUrl.startsWith("http")
+        ? rawUrl
+        : `${BASE}${rawUrl}`
+      : "";
+  
+    return {
+      id:          item.id,
+      titre:       item.Titre ?? item.titre ?? item.slug,
+      slug:        item.slug,
+      date:        item.date_publication,
+      extrait:     item.resume,
+      imageUrl,                      // ← ici notre URL désormais robuste
+      categories:  (item.categories?.data || []).map((c: any) => c.attributes.nom),
+      auteur:      item.auteur,
+      contenuHtml: richTextToHtml(Array.isArray(item.contenu) ? item.contenu : []),
+    };
+  });
+  
+}
+// ------------------------------
+// Récupère un article par son slug
+// ------------------------------
+export async function getArticleBySlug(slug: string) {
+  const res = await fetch(
+    `${BASE}/api/articles?filters[slug][$eq]=${slug}&populate=*&sort[0]=date_publication:desc`
+  );
+  if (!res.ok) {
+    throw new Error(`Strapi getArticleBySlug error: ${res.status}`);
+  }
+  const { data } = await res.json();
+  if (!Array.isArray(data) || data.length === 0) {
+    return null;
+  }
+
+  const item = data[0];
+
+  console.log(
+    "DEBUG getArticleBySlug item →",
+    JSON.stringify(item, null, 2)
+  );  
+
+  // Gestion du champ image, qu'il soit sous item.image.data.attributes ou aplati
+  const imgData = item.image?.data?.attributes ?? item.image;
+  const rawUrl =
+    imgData?.formats?.medium?.url ??
+    imgData?.url ??
+    "";
+  const imageUrl = rawUrl
+    ? rawUrl.startsWith("http")
+      ? rawUrl
+      : `${BASE}${rawUrl}`
+    : "";
+
+  return {
+    id:          item.id,
+    titre:       item.Titre,
+    slug:        item.slug,
+    date:        item.date_publication,
+    extrait:     item.resume,
+    imageUrl,
+    categories: (item.categories || []).map((c: any) => ({
+      id:   c.id,
+      nom:  c.Nom,    // attention à la casse exacte dans ton log
+      slug: c.slug,
+    })),
+    
+    
+    auteur:      item.auteur,
+    contenuHtml: richTextToHtml(Array.isArray(item.contenu) ? item.contenu : []),
+  };
+}
+
+
+

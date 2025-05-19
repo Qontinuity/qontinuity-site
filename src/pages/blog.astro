@@ -1,0 +1,35 @@
+---
+import Layout from '@/layouts/BaseLayout.astro';
+import Hero from '@/components/landing/Hero.astro';     // ← importe Hero
+import { getArticles } from '@/lib/strapi';
+
+const articles = await getArticles();
+---
+
+<Layout title="Blog">
+
+<!-- Bannière Hero avec logo réduit -->
+  <Hero logoClass="w-80 h-auto max-w-none" />
+
+  <section class="max-w-screen-lg mx-auto px-4 py-16">
+    <h1 class="text-3xl font-bold mb-10 text-center text-[#bf2b34]">Actualités</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {articles.map((a) => (
+        <article key={a.id} class="bg-white shadow rounded-xl p-6 flex flex-col">
+          {a.imageUrl && (
+            <img src={a.imageUrl} alt={a.titre} class="rounded mb-4 aspect-video object-cover" />
+          )}
+          <h2 class="text-xl font-semibold mb-2 text-[#bf2b34]">{a.titre}</h2>
+          <p class="text-sm text-zinc-500 mb-4">
+            {new Date(a.date).toLocaleDateString('fr-FR')}
+          </p>
+          {a.extrait && <p class="mb-4">{a.extrait}</p>}
+          <a href={`/blog/${a.slug}`} class="mt-auto text-[#bf2b34] hover:underline">
+            Lire l’article →
+          </a>
+        </article>
+      ))}
+    </div>
+  </section>
+</Layout>
