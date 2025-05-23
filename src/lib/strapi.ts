@@ -10,7 +10,7 @@ export const BASE = import.meta.env.VITE_STRAPI_URL;
 function richTextToHtml(blocks: any[] = []): string {
   let html = "";
   let inList = false;
-  let listTag = "ul";
+  const listTag = "ul";
 
   blocks.forEach((block) => {
   /// 1️⃣ Génère le HTML des enfants avec marques + hard breaks
