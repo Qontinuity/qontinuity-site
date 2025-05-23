@@ -8,13 +8,14 @@ const { blocks } = Astro.props;
   <section class="py-16 bg-transparent">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {blocks.map(block => (
+        {blocks.map((block, index) => (
           <a
             href={block.link}
-            class="block p-6 bg-black rounded-2xl shadow-md transition-shadow transition-transform duration-200 ease-out transform hover:shadow-lg hover:scale-[1.02]"
+            class="block p-6 rounded-2xl shadow-md transition-shadow transition-transform duration-200 ease-out transform hover:shadow-lg hover:scale-[1.02]"
+            style={index === 0 ? 'background-color: #bf2b34;' : 'background-color: black;'}
           >
             <h3 class="text-2xl font-semibold text-white">{block.title}</h3>
-            <p class="mt-2 text-gray-300">{block.description}</p>
+            <p class={`mt-2 ${index === 0 ? 'text-white' : 'text-gray-300'}`}>{block.description}</p>
           </a>
         ))}
       </div>

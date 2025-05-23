@@ -40,12 +40,128 @@ const faqs = await getFaqs();    // ← Ajout de l’appel à getFaqs()
   <!-- Blocs d'actions (dynamiques depuis Strapi) -->
   <ActionBlocks blocks={actionBlocks} />
 
- <h2 class="text-3xl tracking-tighter font-light lg:text-4xl text-black text-center">
-  Nos univers de formation à l'IA
-</h2>
+ <!-- Section formations avec expansion -->
+<section class="py-8">
+  <div class="text-center mb-8">
+    <h2 class="text-3xl tracking-tighter font-light lg:text-4xl text-black mb-4">
+      Nos univers de formation à l'IA
+    </h2>
+    <p class="text-lg text-zinc-600 max-w-2xl mx-auto">
+      Des spécialisations métiers pour maîtriser l'IA dans votre domaine
+    </p>
+  </div>
 
-  <!-- Blocs de catégories (Strapi) -->
+  <!-- Bouton d'expansion -->
+  <div class="text-center mb-8">
+    <button 
+      id="show-formations-btn"
+      class="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-all duration-300"
+    >
+      <span>Découvrir nos formations par domaine</span>
+      <svg class="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+      </svg>
+    </button>
+  </div>
+
+<!-- Catégories (masquées au départ) -->
+<div id="categories-container" class="hidden">
   <CategoriesHome categories={categories} />
+  
+  <!-- Bouton pour replier -->
+  <div class="text-center mt-8">
+    <button 
+      id="hide-formations-btn"
+      class="text-sm text-zinc-500 hover:text-zinc-700 transition-colors duration-200 px-4 py-2"
+    >
+      ↑ Replier les formations
+    </button>
+  </div>
+</div>
+</section>
    <Faq faqs={faqs} />
+
+<!-- CSS pour le script ci dessous -->
+<style>
+  /* Transitions fluides pour les boutons */
+  #show-formations-btn {
+    transition: all 0.3s ease;
+  }
+  
+  #show-formations-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+  }
+  
+  #show-formations-btn:hover svg {
+    transform: translateY(2px);
+  }
+  
+  /* Animation pour le bouton replier */
+  #hide-formations-btn {
+    transition: all 0.2s ease;
+  }
+  
+  #hide-formations-btn:hover {
+    transform: translateY(-1px);
+  }
+</style>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const showBtn = document.getElementById('show-formations-btn');
+    const hideBtn = document.getElementById('hide-formations-btn');
+    const container = document.getElementById('categories-container');
+
+    if (showBtn && hideBtn && container) {
+      // Afficher les catégories avec animation
+      showBtn.addEventListener('click', function() {
+        // Faire disparaître le bouton en fondu
+        showBtn.style.opacity = '0';
+        showBtn.style.transform = 'translateY(-10px)';
+        
+        setTimeout(() => {
+          showBtn.style.display = 'none';
+          
+          // Préparer l'animation d'entrée
+          container.style.opacity = '0';
+          container.style.transform = 'translateY(20px)';
+          container.classList.remove('hidden');
+          
+          // Animation d'apparition
+          setTimeout(() => {
+            container.style.transition = 'all 0.6s ease';
+            container.style.opacity = '1';
+            container.style.transform = 'translateY(0)';
+          }, 50);
+        }, 300);
+      });
+
+      // Masquer les catégories avec animation
+      hideBtn.addEventListener('click', function() {
+        // Animation de sortie
+        container.style.transition = 'all 0.4s ease';
+        container.style.opacity = '0';
+        container.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+          container.classList.add('hidden');
+          
+          // Réapparition du bouton
+          showBtn.style.display = 'inline-flex';
+          showBtn.style.opacity = '0';
+          showBtn.style.transform = 'translateY(10px)';
+          
+          setTimeout(() => {
+            showBtn.style.transition = 'all 0.4s ease';
+            showBtn.style.opacity = '1';
+            showBtn.style.transform = 'translateY(0)';
+          }, 50);
+        }, 400);
+      });
+    }
+  });
+</script>
 
 </BaseLayout>

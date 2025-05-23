@@ -7,21 +7,15 @@ const { faqs } = Astro.props;
 
 <section x-data="{ selected: null }" class="scroll-mt-24 w-full" id="faq">
   <div class="px-4 md:px-8 lg:px-12 py-12 w-full max-w-screen-xl mx-auto">
-    <div>
-      <h2 class="text-3xl tracking-tighter font-light lg:text-4xl text-black">
-        Les réponses <span class="block">à vos questions les plus fréquentes</span>
-      </h2>
-      <p class="mt-5 text-black">
-        Vous ne trouvez pas la réponse à votre question ? Adressez-nous un
-        <a
-          class="text-blue-400 hover:text-black duration-200"
-          href="mailto:jean.gaultier@qontinuity.fr"
-        >
-          email
-        </a>
-        et nous vous répondrons rapidement.
-      </p>
-    </div>
+    <div class="text-center">
+  <h2 class="text-3xl tracking-tighter font-light lg:text-4xl text-black">
+    Les réponses à vos questions les plus fréquentes
+  </h2>
+  <p class="mt-5 text-black">
+    Vous ne trouvez pas la réponse à votre question ? Adressez-nous un <a class="text-blue-400 hover:text-black duration-200" href="mailto:jean.gaultier@qontinuity.fr">email</a> et nous vous répondrons rapidement.
+  </p>
+</div>
+
 
     <ul
   class="list-none text-black bg-white rounded-3xl divide-y divide-zinc-200 mt-8"
