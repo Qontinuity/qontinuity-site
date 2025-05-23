@@ -138,6 +138,7 @@ export async function getCategories() {
       id: item.id,
       nom: raw.Nom || raw.nom || "",
       slug: raw.slug,
+      ordre: raw.ordre, // ✅ Ajout du champ ordre
       descriptionHtml: richTextToHtml(
         Array.isArray(raw.description) ? raw.description : [],
       ),

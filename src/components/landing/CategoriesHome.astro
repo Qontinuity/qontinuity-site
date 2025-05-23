@@ -9,23 +9,36 @@ const { categories = [] } = Astro.props;
       ? cat.descriptionHtml.split('</p>')[0] + '</p>'
       : '<p>Aucune description disponible.</p>';
 
+    // ✅ Style conditionnel selon l'ordre
+    const isFirstCard = cat.ordre === 1;
+    const cardClasses = isFirstCard
+      ? "block border rounded-xl p-6 hover:shadow-lg transition bg-[#bf2b34] text-white border-[#bf2b34]"
+      : "block border rounded-xl p-6 hover:shadow-lg transition";
+    
+    const textClasses = isFirstCard
+      ? "text-sm text-white/90 prose prose-invert mb-4"
+      : "text-sm text-zinc-600 prose mb-4";
+
+    const linkClasses = isFirstCard
+      ? "text-white font-medium"
+      : "text-[#bf2b34] font-medium";
+
     return (
       <a
         key={cat.id}
         href={`/categorie/${cat.slug}`}
-        class="block border rounded-xl p-6 hover:shadow-lg transition"
+        class={cardClasses}
       >
         <h2 class="text-xl font-bold mb-2">{cat.nom}</h2>
 
         {/* Petit aperçu de la description */}
         <div
-          class="text-sm text-zinc-600 prose mb-4"
+          class={textClasses}
           set:html={teaserHtml}
         />
 
-        <span class="text-[#bf2b34] font-medium">Voir les formations →</span>
+        <span class={linkClasses}>Voir les formations →</span>
       </a>
     );
   })}
 </section>
-
