@@ -1,30 +1,28 @@
 {
-  "name": "@lexington/minimalstudio",
+  "name": "qontinuity-site",
   "type": "module",
   "version": "0.0.1",
   "private": true,
   "scripts": {
-   "dev": "astro dev",
+    "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "lint:astro": "eslint . --config eslintrc.astro.cjs --ext .astro --quiet",
-    "lint:ts":    "eslint . --config eslintrc.ts.cjs --ext .js,.ts,.tsx --quiet",
-    "format":     "prettier --write .",
-    "prepare":   "husky install"
+    "lint:ts": "eslint . --config eslintrc.ts.cjs --ext .js,.ts,.tsx --quiet",
+    "format": "prettier --write .",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.2.1",
     "@astrolib/seo": "^1.0.0-beta.5",
-    "@heroicons/vue": "^2.2.0",
     "@tailwindcss/forms": "^0.5.9",
     "@tailwindcss/typography": "^0.5.15",
     "astro": "^5.1.6",
     "tailwind-scrollbar-hide": "^1.1.7"
   },
   "devDependencies": {
-    "@astrojs/vue": "^5.0.13",
     "@tailwindcss/vite": "^4.0.0-beta.9",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
     "@typescript-eslint/parser": "^8.32.0",
@@ -36,7 +34,6 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.0.0",
     "prettier": "^3.5.3",
-    "tailwindcss": "^4.0.0-beta.9",
-    "unplugin-icons": "^22.1.0"
+    "tailwindcss": "^4.0.0-beta.9"
   }
 }

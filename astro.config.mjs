@@ -7,6 +7,6 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  site: "https://yourwebsite.com/",
+  site: "https://qontinuity-formations.eu/", // ← Mettez votre vraie URL
   integrations: [sitemap()],
 });
