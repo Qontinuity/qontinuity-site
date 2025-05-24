@@ -177,19 +177,20 @@ const updatedAtFr = new Date(formation.updatedAt)
           </div>
         </div>
 
-        <!-- Bouton centré en bas de la carte -->
-        <div class="mt-6 text-center">
-          <button
-            class="bg-[#bf2b34] text-white px-6 py-2 rounded hover:bg-[#a1242d] transition"
-          >
-            S'inscrire
-          </button>
-        </div>
+<!-- Bouton centré en bas de la carte -->
+<div class="mt-6 text-center">
+  <button
+    onclick={`window.location.href='/inscriptions/inscription_session?session=${s.documentId}'`}
+    class="bg-[#bf2b34] text-white px-6 py-2 rounded hover:bg-[#a1242d] transition"
+  >
+    S'inscrire
+  </button>
+</div>
       </article>
     ))}
   </div>
 ) : (
-  <p class="italic text-zinc-600">Aucune session programmée pour l’instant.</p>
+  <p class="italic text-zinc-600">Aucune session programmée pour l'instant.</p>
 )}
 
 <!-- Accordéon Qualiopi -->

@@ -296,11 +296,11 @@ export async function getFormationBySlug(slug: string) {
 const sessionsRaw = Array.isArray(fa.sessions) ? fa.sessions : [];
 const sessions = sessionsRaw.map((s: any) => ({
   id: s.id,
+  documentId: s.documentId, // ← Ajouter cette ligne !
   date: s.date,
   heure_debut: s.heure_debut,
   heure_fin: s.heure_fin,
   mode: s.mode,
-  // transforme le rich-text du lieu en HTML
   lieu: richTextToHtml(Array.isArray(s.lieu) ? s.lieu : []),
 }));
 
@@ -426,6 +426,34 @@ export async function getArticleBySlug(slug: string) {
     contenuHtml: richTextToHtml(Array.isArray(item.contenu) ? item.contenu : []),
   };
 }
-
-
+// Dans strapi.ts
+export async function getSessionById(sessionId: string) {
+  const res = await fetch(
+    `${BASE}/api/sessions/${sessionId}?populate=formation`
+  );
+  
+  if (!res.ok) {
+    throw new Error(`Strapi getSessionById error: ${res.status}`);
+  }
+  
+  const { data } = await res.json();
+  
+  if (!data) return null;
+  
+  return {
+    id: data.id,
+    documentId: data.documentId, // Ajouter le documentId
+    date: data.date,
+    heure_debut: data.heure_debut,
+    heure_fin: data.heure_fin,
+    mode: data.mode,
+    lieu: richTextToHtml(Array.isArray(data.lieu) ? data.lieu : []),
+    formation: {
+      id: data.formation?.id,
+      documentId: data.formation?.documentId,
+      titre: data.formation?.titre || "",
+      slug: data.formation?.slug || "",
+    }
+  };
+}
 

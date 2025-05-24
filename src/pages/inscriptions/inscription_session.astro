@@ -1,0 +1,56 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/BaseLayout.astro';
+import Hero from '@/components/landing/Hero.astro';
+import { getSessionById } from '../../lib/strapi';
+
+const sessionId = Astro.url.searchParams.get('session');
+
+if (!sessionId) {
+  throw new Error('Session non spécifiée');
+}
+
+// Récupération des données de la session
+const session = await getSessionById(sessionId);
+
+if (!session) {
+  throw new Error('Session introuvable');
+}
+
+// Formatage de la date pour affichage
+const dateFormatee = new Date(session.date).toLocaleDateString('fr-FR', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric'
+});
+---
+
+<Layout title="Inscription - {session.formation.titre}">
+  <!-- Bannière Hero -->
+  <Hero logoClass="w-80 max-w-none" />
+  
+  <section class="w-full max-w-screen-md mx-auto px-4 py-16">
+  
+    <!-- En-tête récapitulatif -->
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
+      <h1 class="text-2xl font-bold mb-4 text-[#bf2b34]">
+        Inscription à la formation
+      </h1>
+      
+      <div class="bg-gray-50 rounded-lg p-4">
+        <h2 class="font-semibold text-lg mb-2">{session.formation.titre}</h2>
+        <div class="text-sm text-gray-600 space-y-1">
+          <p><strong>Date :</strong> {dateFormatee}</p>
+          <p><strong>Horaires :</strong> {session.heure_debut} - {session.heure_fin}</p>
+          <p><strong>Mode :</strong> {session.mode}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulaire (à créer dans l'étape suivante) -->
+    <div id="formulaire-inscription">
+      <p class="text-center text-gray-500">Formulaire en cours de construction...</p>
+    </div>
+  </section>
+</Layout>
