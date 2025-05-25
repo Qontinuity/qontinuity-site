@@ -453,6 +453,7 @@ export async function getSessionById(sessionId: string) {
       documentId: data.formation?.documentId,
       titre: data.formation?.titre || "",
       slug: data.formation?.slug || "",
+      prix_ttc: data.formation?.prix_ttc || ""
     }
   };
 }
