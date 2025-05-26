@@ -1,0 +1,283 @@
+---
+// src/pages/espace-client/dashboard.astro
+
+// Ne pas prerendre cette page (mode serveur)
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '@/components/landing/Hero.astro';
+
+// Vérifier l'authentification
+const authToken = Astro.cookies.get('auth-token');
+const userData = Astro.cookies.get('user-data');
+
+if (!authToken?.value || !userData?.value) {
+  return Astro.redirect('/espace-client/login');
+}
+
+const user = JSON.parse(userData.value);
+
+// Récupérer les formations de l'utilisateur pour le dashboard
+const strapiBase = 'http://82.112.254.196:1337';
+let userFormations = [];
+
+try {
+  const response = await fetch(
+    `${strapiBase}/api/inscriptions-aux-sessions?populate[session][populate]=formation&filters[email][$eq]=${user.email}&sort[session][date]=asc`,
+    {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+  const data = await response.json();
+  userFormations = data.data || [];
+} catch (error) {
+  console.error('Erreur récupération formations:', error);
+}
+
+// Fonction pour formater les dates
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('fr-FR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+// Fonction pour extraire le lieu en texte simple
+function extractLieuText(lieuRichText) {
+  if (!lieuRichText || !Array.isArray(lieuRichText)) return '';
+  
+  // Extraire le texte de la première ligne (nom du centre)
+  const firstParagraph = lieuRichText[0];
+  if (firstParagraph?.children) {
+    const boldText = firstParagraph.children.find(child => child.bold);
+    if (boldText) return boldText.text.trim();
+    
+    // Sinon prendre le premier texte
+    const firstText = firstParagraph.children[0];
+    if (firstText?.text) return firstText.text.trim();
+  }
+  
+  return '';
+}
+function getStatut(session) {
+  const today = new Date();
+  const sessionDate = new Date(session.date);
+  
+  if (sessionDate > today) {
+    return { text: 'À venir', color: 'text-blue-600' };
+  } else if (sessionDate.toDateString() === today.toDateString()) {
+    return { text: 'Aujourd\'hui', color: 'text-green-600' };
+  } else {
+    return { text: 'Terminé', color: 'text-gray-600' };
+  }
+}
+
+// Déconnexion
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  if (formData.get('action') === 'logout') {
+    Astro.cookies.delete('auth-token', { path: '/' });
+    Astro.cookies.delete('user-data', { path: '/' });
+    return Astro.redirect('/espace-client/login');
+  }
+}
+---
+
+<BaseLayout 
+  title="Dashboard - Espace Client Qontinuity"
+  description="Votre espace personnel pour gérer vos formations IA."
+>
+  <!-- Bannière Hero -->
+  <Hero logoClass="w-80 max-w-none" />
+
+  <main class="min-h-screen bg-gray-50">
+    <!-- Titre centré -->
+   <div class="text-center py-8" style="background-color: #bf2b34;">
+      <h1 class="text-2xl font-bold text-white">
+        Votre espace personnel
+      </h1>
+    </div>
+
+    <!-- Header utilisateur -->
+    <header class="bg-white shadow mb-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center">
+            <h2 class="text-xl font-semibold text-gray-900">
+              Bonjour, {user.prenom} {user.nom}
+            </h2>
+          </div>
+          
+          <div class="flex items-center space-x-4">
+            <form method="POST" class="inline">
+              <input type="hidden" name="action" value="logout" />
+              <button
+                type="submit"
+                class="text-sm font-medium" style="color: #bf2b34;" onmouseover="this.style.color='#9a2028'" onmouseout="this.style.color='#bf2b34'"
+              >
+                Se déconnecter
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Contenu principal -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 space-y-6">
+      
+      <!-- Informations utilisateur -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <h3 class="text-lg font-medium text-gray-900 mb-6">Vos informations</h3>
+          <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 mb-4">
+            <div>
+              <dt class="text-sm text-gray-500">Nom complet</dt>
+              <dd class="text-sm font-medium text-gray-900">{user.prenom} {user.nom}</dd>
+            </div>
+            <div>
+              <dt class="text-sm text-gray-500">Email</dt>
+              <dd class="text-sm font-medium text-gray-900">{user.email}</dd>
+            </div>
+            <div>
+              <dt class="text-sm text-gray-500">Téléphone</dt>
+              <dd class="text-sm font-medium text-gray-900">{user.telephone || 'Non renseigné'}</dd>
+            </div>
+            <div>
+              <dt class="text-sm text-gray-500">Entreprise</dt>
+              <dd class="text-sm font-medium text-gray-900">{user.entreprise || 'Non renseignée'}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Mes formations - Tableau -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-medium text-gray-900">Mes formations</h3>
+            <a 
+              href="/espace-client/formations"
+              class="text-sm font-medium" style="color: #bf2b34;" onmouseover="this.style.color='#9a2028'" onmouseout="this.style.color='#bf2b34'"
+            >
+              Voir tout →
+            </a>
+          </div>
+          
+          {userFormations.length === 0 ? (
+            <div class="text-center py-8">
+              <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
+                📚
+              </div>
+              <p class="text-gray-500 mb-4">Aucune formation inscrite</p>
+              <a 
+                href="/formations" 
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+              >
+                Découvrir nos formations
+              </a>
+            </div>
+          ) : (
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Formation
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Lieu
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Statut
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  {userFormations.map((inscription) => {
+                    const session = inscription.session;
+                    const formation = session?.formation;
+                    const statut = getStatut(session);
+                    
+                    if (!formation) return null;
+                    
+                    return (
+                      <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div class="text-sm font-medium text-gray-900">
+                              {formation.titre}
+                            </div>
+                            <div class="text-sm text-gray-500">
+                              {formation.duree} • {formation.Niveau_de_depart}
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">
+                            {formatDate(session.date)}
+                          </div>
+                          <div class="text-sm text-gray-500">
+                            {session.heure_debut} - {session.heure_fin}
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">
+                            {session.mode}
+                          </div>
+                          <div class="text-sm text-gray-500">
+                            {extractLieuText(session.lieu)}
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class={`text-sm font-medium ${statut.color}`}>
+                            {statut.text}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <!-- Prochaines fonctionnalités -->
+      <div class="px-4 sm:px-0">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Prochaines fonctionnalités</h3>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          
+          <a 
+            href="/espace-client/formations"
+            class="bg-white border border-gray-200 rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block"
+          >
+            <h4 class="text-base font-medium text-gray-900 mb-2">Mes formations</h4>
+            <p class="text-sm text-gray-500">Accès à vos formations IA</p>
+          </a>
+
+          <div class="bg-white border border-gray-200 rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
+            <h4 class="text-base font-medium text-gray-900 mb-2">Documents</h4>
+            <p class="text-sm text-gray-500">Attestations et supports</p>
+          </div>
+
+          <div class="bg-white border border-gray-200 rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
+            <h4 class="text-base font-medium text-gray-900 mb-2">Progression</h4>
+            <p class="text-sm text-gray-500">Suivi de vos parcours</p>
+          </div>
+
+        </div>
+      </div>
+      
+    </div>
+  </main>
+</BaseLayout>
