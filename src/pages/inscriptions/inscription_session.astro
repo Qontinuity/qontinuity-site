@@ -5,6 +5,24 @@ import Layout from '../../layouts/BaseLayout.astro';
 import Hero from '@/components/landing/Hero.astro';
 import { getSessionById } from '../../lib/strapi';
 
+// 🔒 NOUVEAU : Vérification authentification obligatoire
+const authToken = Astro.cookies.get('auth-token');
+const userData = Astro.cookies.get('user-data');
+
+if (!authToken?.value || !userData?.value) {
+  // Si pas connecté, rediriger vers login avec l'URL actuelle en redirect
+  const currentUrl = Astro.url.pathname + Astro.url.search;
+  return Astro.redirect(`/espace-client/login?redirect=${encodeURIComponent(currentUrl)}`);
+}
+
+// 🔒 NOUVEAU : Récupération des données utilisateur pour pré-remplissage
+const user = JSON.parse(userData.value);
+console.log('🔒 INSCRIPTION_SESSION - Données utilisateur:', {
+  nom: user.nom,
+  prenom: user.prenom, 
+  email: user.email
+}); // DEBUG
+
 const sessionId = Astro.url.searchParams.get('session');
 
 if (!sessionId) {
@@ -49,6 +67,25 @@ const dateFormatee = new Date(session.date).toLocaleDateString('fr-FR', {
       </div>
     </div>
 
+    <!-- 🔒 NOUVEAU : Message de bienvenue personnalisé -->
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
+      <div class="flex items-center">
+        <div class="text-green-600 mr-3">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-medium text-green-800">
+            Bonjour {user.prenom} ! Vos informations ont été pré-remplies automatiquement.
+          </p>
+          <p class="text-xs text-green-600 mt-1">
+            Vous pouvez les modifier si nécessaire avant de valider votre inscription.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- Formulaire d'inscription -->
     <div class="bg-white rounded-2xl shadow-md p-8 mb-8">
       <!-- Toggle financement -->
@@ -76,11 +113,13 @@ const dateFormatee = new Date(session.date).toLocaleDateString('fr-FR', {
               <label for="nom" class="block text-sm font-medium text-gray-700 mb-2">
                 Nom *
               </label>
+              <!-- 🔒 NOUVEAU : Valeur pré-remplie depuis les données utilisateur -->
               <input 
                 type="text" 
                 id="nom" 
                 name="nom" 
                 required
+                value={user.nom || ''}
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#bf2b34] focus:border-transparent"
                 placeholder="Votre nom"
               >
@@ -90,11 +129,13 @@ const dateFormatee = new Date(session.date).toLocaleDateString('fr-FR', {
               <label for="prenom" class="block text-sm font-medium text-gray-700 mb-2">
                 Prénom *
               </label>
+              <!-- 🔒 NOUVEAU : Valeur pré-remplie depuis les données utilisateur -->
               <input 
                 type="text" 
                 id="prenom" 
                 name="prenom" 
                 required
+                value={user.prenom || ''}
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#bf2b34] focus:border-transparent"
                 placeholder="Votre prénom"
               >
@@ -118,24 +159,32 @@ const dateFormatee = new Date(session.date).toLocaleDateString('fr-FR', {
             <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
               Email *
             </label>
+            <!-- 🔒 NOUVEAU : Valeur pré-remplie et en readonly pour éviter les erreurs -->
             <input 
               type="email" 
               id="email" 
               name="email" 
               required
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#bf2b34] focus:border-transparent"
+              value={user.email || ''}
+              readonly
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
               placeholder="votre.email@exemple.com"
             >
+            <p class="text-xs text-gray-500 mt-1">
+              📧 Email verrouillé - utilisez celui de votre compte
+            </p>
           </div>
           
           <div>
             <label for="telephone" class="block text-sm font-medium text-gray-700 mb-2">
               Téléphone *
             </label>
+            <!-- 🔒 NOUVEAU : Pré-remplir si disponible dans les données utilisateur -->
             <input 
               type="tel" 
               id="telephone" 
               name="telephone"
+              value={user.telephone || ''}
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#bf2b34] focus:border-transparent"
               placeholder="06 00 00 00 00"
             >
@@ -359,7 +408,10 @@ const dateFormatee = new Date(session.date).toLocaleDateString('fr-FR', {
               <div class="text-center py-8">
                 <div class="text-6xl mb-4">🎉</div>
                 <h3 class="text-xl font-semibold text-green-600 mb-2">Inscription confirmée !</h3>
-                <p class="text-gray-600">Vous recevrez bientôt un email de confirmation.</p>
+                <p class="text-gray-600 mb-4">Vous recevrez bientôt un email de confirmation.</p>
+                <a href="/espace-client/dashboard" class="inline-flex items-center px-4 py-2 bg-[#bf2b34] text-white rounded-lg hover:bg-[#a1242d] transition">
+                  Voir mes formations →
+                </a>
               </div>
             `;
           }, 2000);

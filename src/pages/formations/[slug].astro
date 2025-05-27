@@ -11,10 +11,14 @@ export const prerender = false;
 const { params } = Astro;
 const formation = await getFormationBySlug(params.slug);
 
+// 🔒 NOUVEAU : Vérification authentification
+const authToken = Astro.cookies.get('auth-token');
+const isAuthenticated = !!authToken?.value;
+
 // 🔍 DEBUG : Vérifier quelle URL est utilisée
 console.log('BASE URL utilisée:', import.meta.env.VITE_STRAPI_URL);
 console.log('Formation récupérée avec ID:', formation?.id);
-
+console.log('🔒 Utilisateur authentifié:', isAuthenticated); // DEBUG auth
 
 // 🔍 DEBUG : Vérifier les données formation récupérées
 console.log('Formation récupérée:', {
@@ -27,7 +31,6 @@ console.log('Formation récupérée:', {
 if (!formation) {
   throw new Error('Formation introuvable');
 }
-
 
 // ─── AJOUT ───
 const updatedAtFr = new Date(formation.updatedAt)
@@ -50,15 +53,12 @@ const updatedAtFr = new Date(formation.updatedAt)
      set:html={formation.descriptionHtml}>
 </div>
 
-
-
-   <!-- Carte “Infos synthétiques” -->
+   <!-- Carte "Infos synthétiques" -->
 <div class="bg-white rounded-2xl shadow-md p-6 mb-12 max-w-screen-lg mx-auto">
   <h2 class="text-lg font-semibold mb-4 text-center">Informations clés</h2>
 
 <!-- Ligne de séparation -->
   <hr class="border-t border-gray-200 mb-6" />
-
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
     <div class="space-y-1">
@@ -190,15 +190,18 @@ const updatedAtFr = new Date(formation.updatedAt)
           </div>
         </div>
 
-<!-- Bouton centré en bas de la carte -->
-<div class="mt-6 text-center">
-  <button
-    onclick={`window.location.href='/inscriptions/inscription_session?session=${s.documentId}'`}
-    class="bg-[#bf2b34] text-white px-6 py-2 rounded hover:bg-[#a1242d] transition"
-  >
-    S'inscrire
-  </button>
-</div>
+        <!-- Bouton centré en bas de la carte -->
+        <div class="mt-6 text-center">
+          <button
+            onclick={isAuthenticated 
+              ? `window.location.href='/inscriptions/inscription_session?session=${s.documentId}'`
+              : `window.location.href='/espace-client/login?redirect=${encodeURIComponent('/inscriptions/inscription_session?session=' + s.documentId)}'`
+            }
+            class="bg-[#bf2b34] text-white px-6 py-2 rounded hover:bg-[#a1242d] transition"
+          >
+            S'inscrire
+          </button>
+        </div>
       </article>
     ))}
   </div>
@@ -408,7 +411,6 @@ const updatedAtFr = new Date(formation.updatedAt)
     }
   });
 </script>
-
 
 <!-- Date de dernière mise à jour -->
 <p class="mt-4 text-sm text-gray-500">
