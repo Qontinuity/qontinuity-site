@@ -24,6 +24,7 @@ if (Astro.request.method === 'POST') {
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirmPassword') as string;
     const entreprise = formData.get('entreprise') as string;
+    const telephone = formData.get('telephone') as string; // 📞 NOUVEAU
 
     // Validations
     if (password !== confirmPassword) {
@@ -57,7 +58,8 @@ if (Astro.request.method === 'POST') {
           body: JSON.stringify({
             nom: nom,
             prenom: prenom,
-            entreprise: entreprise || ''
+            entreprise: entreprise || '',
+            telephone: telephone || '' // 📞 NOUVEAU : Ajout du téléphone
           })
         });
         
@@ -70,7 +72,8 @@ if (Astro.request.method === 'POST') {
             ...data.user,
             nom: updatedUserData.nom || nom,
             prenom: updatedUserData.prenom || prenom,
-            entreprise: updatedUserData.entreprise || entreprise
+            entreprise: updatedUserData.entreprise || entreprise,
+            telephone: updatedUserData.telephone || telephone // 📞 NOUVEAU
           };
         } else {
           console.error('Erreur lors de la mise à jour du profil:', await updateResponse.text());
@@ -198,6 +201,26 @@ if (Astro.request.method === 'POST') {
                 placeholder="jean@exemple.com"
               />
             </div>
+          </div>
+
+          <!-- 📞 NOUVEAU : Téléphone (optionnel) -->
+          <div>
+            <label for="telephone" class="block text-sm font-medium text-gray-700">
+              Téléphone
+            </label>
+            <div class="mt-1">
+              <input
+                id="telephone"
+                name="telephone"
+                type="tel"
+                autocomplete="tel"
+                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="06 00 00 00 00"
+              />
+            </div>
+            <p class="mt-1 text-xs text-gray-500">
+              📞 Optionnel - nous facilite le contact pour vos formations
+            </p>
           </div>
 
           <!-- Entreprise (optionnel) -->
