@@ -1,0 +1,139 @@
+---
+// src/pages/entreprise/test-entreprise-auth.astro
+import { BASE } from '../../lib/strapi';
+
+let result = '';
+let errorMessage = '';
+let success = false;
+
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    
+    console.log('📝 TEST - Email:', email);
+    console.log('📝 TEST - Password:', password);
+    
+    // Recherche directe par email et mot de passe
+    const url = `${BASE}/api/entreprises?filters[email][$eq]=${encodeURIComponent(email)}&filters[password][$eq]=${encodeURIComponent(password)}`;
+    console.log('📝 TEST - URL:', url);
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    console.log('📝 TEST - Réponse complète:', JSON.stringify(data, null, 2));
+    
+    result = JSON.stringify(data, null, 2);
+    
+    if (data.data && data.data.length > 0) {
+      success = true;
+      
+      // Créer un cookie de test
+      Astro.cookies.set('test-entreprise', JSON.stringify({
+        id: data.data[0].id,
+        email: data.data[0].email,
+        nom: data.data[0].nom || data.data[0].contact_nom
+      }), {
+        path: '/',
+        maxAge: 60 * 60 // 1 heure
+      });
+    } else {
+      errorMessage = "Aucune entreprise trouvée avec ces identifiants";
+    }
+  } catch (error) {
+    console.error('📝 TEST - Erreur:', error);
+    errorMessage = `Erreur: ${error.message}`;
+  }
+}
+
+// Vérifier si le cookie existe
+const testCookie = Astro.cookies.get('test-entreprise')?.value;
+let cookieData = null;
+if (testCookie) {
+  try {
+    cookieData = JSON.parse(testCookie);
+  } catch (e) {
+    console.error('Erreur parsing cookie:', e);
+  }
+}
+---
+
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Authentification Entreprise</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">Test Authentification Entreprise</h1>
+    
+    <div class="bg-white shadow-md rounded p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Formulaire de test</h2>
+      
+      <form method="POST" class="space-y-4">
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            required
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
+            value="pierre.martin@test2.com"
+          />
+        </div>
+        
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700">Mot de passe</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            required
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
+            value="test123"
+          />
+        </div>
+        
+        <div>
+          <button 
+            type="submit"
+            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          >
+            Tester
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    {success && (
+      <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6">
+        <p class="text-green-700">✅ Connexion réussie!</p>
+      </div>
+    )}
+    
+    {errorMessage && (
+      <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+        <p class="text-red-700">❌ Erreur: {errorMessage}</p>
+      </div>
+    )}
+    
+    {cookieData && (
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+        <h3 class="text-lg font-semibold text-blue-700 mb-2">Cookie existant:</h3>
+        <pre class="text-sm bg-white p-2 rounded overflow-auto">{JSON.stringify(cookieData, null, 2)}</pre>
+      </div>
+    )}
+    
+    {result && (
+      <div class="mt-6">
+        <h3 class="text-lg font-semibold mb-2">Résultat API:</h3>
+        <pre class="bg-gray-100 p-4 rounded-md overflow-auto text-sm">{result}</pre>
+      </div>
+    )}
+  </div>
+</body>
+</html>

@@ -1,88 +1,110 @@
 ---
-// src/pages/espace-client/login.astro
-import BaseLayout from '../../layouts/BaseLayout.astro';
+// src/pages/entreprise/login.astro
+import { BASE } from '../../lib/strapi';
 
 let errorMessage = '';
 let successMessage = '';
 
-// 🔒 Récupération du paramètre redirect
+// Récupération du paramètre redirect
 const redirectUrl = Astro.url.searchParams.get('redirect');
-const typeParam = Astro.url.searchParams.get('type');
-console.log('🔒 LOGIN - Paramètre redirect:', redirectUrl); // DEBUG
+console.log('🏢 ENTREPRISE LOGIN - Paramètre redirect:', redirectUrl);
+
+// Vérifier si déjà connecté avec un cookie entreprise
+const entrepriseAuthToken = Astro.cookies.get('entreprise-auth-token')?.value;
+const entrepriseData = Astro.cookies.get('entreprise-data')?.value;
+
+if (entrepriseAuthToken && entrepriseData) {
+  console.log('🏢 Entreprise déjà connectée, redirection...');
+  if (redirectUrl) {
+    return Astro.redirect(redirectUrl);
+  } else {
+    return Astro.redirect('/entreprise/dashboard');
+  }
+}
 
 if (Astro.request.method === 'POST') {
   try {
     const formData = await Astro.request.formData();
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
+    const redirectAfterLogin = formData.get('redirect') as string;
 
-    // Appel API Strapi
-    const response = await fetch('http://82.112.254.196:1337/api/auth/local', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        identifier: email,
-        password: password,
-      }),
-    });
+    console.log('🏢 Tentative de connexion entreprise avec email:', email);
+    console.log('🏢 Redirect après login:', redirectAfterLogin);
 
-    const data = await response.json();
+    // Rechercher l'entreprise directement par email et mot de passe
+    const entrepriseUrl = `${BASE}/api/entreprises?filters[email][$eq]=${encodeURIComponent(email)}&filters[password][$eq]=${encodeURIComponent(password)}`;
+    console.log('🏢 URL de recherche entreprise:', entrepriseUrl);
 
-    if (response.ok) {
-      // Connexion réussie - stocker le token et rediriger
-      Astro.cookies.set('auth-token', data.jwt, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
+    const entrepriseResponse = await fetch(entrepriseUrl);
+    const entrepriseData = await entrepriseResponse.json();
+    
+    console.log('🏢 Réponse API entreprise:', JSON.stringify(entrepriseData, null, 2));
+      
+    if (entrepriseData.data && entrepriseData.data.length > 0) {
+      // Authentification réussie
+      console.log('🏢 Authentification réussie pour:', email);
+      
+      // Créer un token simple 
+      const simpleToken = Buffer.from(`${email}:${Date.now()}`).toString('base64');
+      
+      // Stocker le token et les données entreprise dans les cookies
+      Astro.cookies.set('entreprise-auth-token', simpleToken, {
+        path: '/',
         maxAge: 60 * 60 * 24 * 7, // 7 jours
-        path: '/'
       });
       
-      Astro.cookies.set('user-data', JSON.stringify(data.user), {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7,
-        path: '/'
+      // Stocker un objet simple avec les données importantes
+      const entrepriseObj = {
+        id: entrepriseData.data[0].id,
+        nom: entrepriseData.data[0].nom || entrepriseData.data[0].contact_nom,
+        email: entrepriseData.data[0].email
+      };
+      
+      Astro.cookies.set('entreprise-data', JSON.stringify(entrepriseObj), {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 jours
       });
 
-      // 🔒 GESTION DE LA REDIRECTION
-      if (redirectUrl) {
-        console.log('🔒 LOGIN - Redirection vers:', redirectUrl); // DEBUG
-        return Astro.redirect(redirectUrl);
+      // Redirection
+      if (redirectAfterLogin) {
+        console.log('🏢 REDIRECTION vers:', redirectAfterLogin);
+        return Astro.redirect(redirectAfterLogin);
       } else {
-        console.log('🔒 LOGIN - Pas de redirect, vers dashboard'); // DEBUG
-        return Astro.redirect('/espace-client/dashboard');
+        console.log('🏢 REDIRECTION vers dashboard');
+        return Astro.redirect('/entreprise/dashboard');
       }
     } else {
-      errorMessage = data.error?.message || 'Identifiants incorrects';
+      console.log('🏢 Aucune entreprise trouvée avec ces identifiants');
+      errorMessage = "Identifiants incorrects. Veuillez vérifier votre email et mot de passe.";
     }
   } catch (error) {
-    errorMessage = 'Erreur de connexion au serveur';
-    console.error('Erreur auth:', error);
+    console.error('🏢 Erreur auth entreprise:', error);
+    errorMessage = 'Erreur de connexion au serveur. Veuillez réessayer plus tard.';
   }
 }
 ---
 
-<BaseLayout 
-  title="Connexion - Espace Client Qontinuity"
-  description="Connectez-vous à votre espace client Qontinuity pour accéder à vos formations IA."
->
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion Entreprise | Qontinuity</title>
+  <link rel="stylesheet" href="/styles/global.css">
+</head>
+<body>
   <main class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
       <div class="text-center">
-        <h1 class="text-3xl font-bold text-gray-900">Espace Client</h1>
+        <h1 class="text-3xl font-bold text-gray-900">Espace Entreprise</h1>
         <p class="mt-2 text-sm text-gray-600">
-          Connectez-vous pour accéder à vos formations
+          Connectez-vous pour gérer les inscriptions de vos collaborateurs
         </p>
         
-        <!-- 🔒 NOUVEAU : Indication si redirection après connexion -->
         {redirectUrl && (
           <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p class="text-sm text-blue-700">
-              🔒 Vous serez redirigé(e) vers votre inscription après connexion
+              🏢 Vous serez redirigé(e) vers l'inscription de votre collaborateur après connexion
             </p>
           </div>
         )}
@@ -91,7 +113,6 @@ if (Astro.request.method === 'POST') {
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
       <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-        <!-- 🔒 NOUVEAU : Préserver le paramètre redirect dans le formulaire -->
         <form method="POST" class="space-y-6">
           {redirectUrl && (
             <input type="hidden" name="redirect" value={redirectUrl} />
@@ -121,7 +142,8 @@ if (Astro.request.method === 'POST') {
                 autocomplete="email"
                 required
                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="votre@email.com"
+                placeholder="entreprise@exemple.com"
+                value="pierre.martin@test2.com"
               />
             </div>
           </div>
@@ -139,6 +161,7 @@ if (Astro.request.method === 'POST') {
                 required
                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="••••••••"
+                value="test123"
               />
             </div>
           </div>
@@ -179,21 +202,21 @@ if (Astro.request.method === 'POST') {
               <div class="w-full border-t border-gray-300" />
             </div>
             <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-white text-gray-500">Nouveau client ?</span>
+              <span class="px-2 bg-white text-gray-500">Nouvelle entreprise ?</span>
             </div>
           </div>
 
           <div class="mt-6">
-            <!-- 🔒 NOUVEAU : Préserver le paramètre redirect dans le lien vers register -->
-            <a
-              href={`/espace-client/register${Astro.url.search}`}
-  class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
->
-  Créer un compte
-</a>
+            <a 
+              href="/entreprise/contact"
+              class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Contacter le service commercial
+            </a>
           </div>
         </div>
       </div>
     </div>
   </main>
-</BaseLayout>
+</body>
+</html>

@@ -151,16 +151,14 @@ const updatedAtFr = new Date(formation.updatedAt)
           </div>
         </div>
 
-        <!-- 🏢 NOUVEAU : Bouton avec texte dynamique selon le mode -->
+        <!-- 🏢 MODIFIÉ : Bouton avec data-attributes pour JS -->
         <div class="mt-6 text-center">
           <button
-            onclick={isAuthenticated 
-              ? `window.location.href='/inscriptions/inscription_session?session=${s.documentId}'`
-              : `window.location.href='/espace-client/login?redirect=${encodeURIComponent('/inscriptions/inscription_session?session=' + s.documentId)}'`
-            }
             class="bg-[#bf2b34] text-white px-6 py-2 rounded hover:bg-[#a1242d] transition btn-inscription"
             data-text-particulier="S'inscrire"
             data-text-entreprise="Inscrire un collaborateur"
+            data-session-id={s.documentId}
+            data-is-authenticated={isAuthenticated ? "true" : "false"}
           >
             S'inscrire
           </button>
@@ -311,7 +309,7 @@ const updatedAtFr = new Date(formation.updatedAt)
   const descInter = document.getElementById('description-inter');
   const descIntra = document.getElementById('description-intra');
   const sessionsSection = document.querySelector('.grid.gap-6.sm\\:grid-cols-1.md\\:grid-cols-2');
-  const buttonsInscription = document.querySelectorAll('.btn-inscription'); // 🔧 NOUVEAU
+  const buttonsInscription = document.querySelectorAll('.btn-inscription');
   
   let isIntra = false;
   
@@ -384,17 +382,32 @@ const updatedAtFr = new Date(formation.updatedAt)
       updateButtonTexts(false); // Mode particulier
     }
   });
-</script>
-
-<!-- Date de dernière mise à jour -->
-<p class="mt-4 text-sm text-gray-500">
-  Dernière mise à jour&nbsp;: {updatedAtFr}
-</p>
-
-    <!-- Placeholder pour le futur formulaire -->
-    <div id="inscription-placeholder"></div>
-
-    <script>
+  
+  // 🔧 NOUVEAU : Configuration des boutons d'inscription avec redirection adaptée selon le mode
+  document.querySelectorAll('.btn-inscription').forEach(button => {
+  button.addEventListener('click', function() {
+    const sessionId = this.getAttribute('data-session-id');
+    const isAuthenticated = this.getAttribute('data-is-authenticated') === "true";
+    
+    if (isIntra) {
+  // Mode entreprise - redirection vers login entreprise
+  if (isAuthenticated) {
+    window.location.href = `/inscriptions/inscription_session?session=${sessionId}&mode=entreprise`;
+  } else {
+    window.location.href = `/espace-client/login?redirect=${encodeURIComponent('/inscriptions/inscription_session?session=' + sessionId + '&mode=entreprise')}&type=entreprise`;
+  }
+} else {
+      // Mode particulier - redirection vers login individuel
+      if (isAuthenticated) {
+        window.location.href = `/inscriptions/inscription_session?session=${sessionId}`;
+      } else {
+        window.location.href = `/espace-client/login?redirect=${encodeURIComponent('/inscriptions/inscription_session?session=' + sessionId)}`;
+      }
+    }
+  });
+});
+  
+  // Accordéon
   const acc = document.querySelectorAll('#info-complementaires details');
   acc.forEach((d) =>
     d.addEventListener('toggle', () => {
@@ -406,7 +419,7 @@ const updatedAtFr = new Date(formation.updatedAt)
     })
   );
 
-// ─── FORMULAIRE LISTE D'ATTENTE ───
+  // ─── FORMULAIRE LISTE D'ATTENTE ───
   const listeAttenteForm = document.getElementById('liste-attente-form');
   
   if (listeAttenteForm) {
@@ -434,7 +447,7 @@ const updatedAtFr = new Date(formation.updatedAt)
         const formationId = formationElement?.getAttribute('data-formation-id');
         const formationDocumentId = formationElement?.getAttribute('data-formation-document-id');
         
-      // ✅ AJOUTE CES LIGNES ICI :
+        // ✅ AJOUTE CES LIGNES ICI :
         console.log('strapiBase récupéré:', 'TEST');
         console.log('URL finale:', 'http://82.112.254.196:1337/api/listes-attentes');
 
@@ -451,8 +464,8 @@ const updatedAtFr = new Date(formation.updatedAt)
           email: formData.get('email'),
           formation: {
             id: parseInt(relationId)
-        }
-};
+          }
+        };
         
         console.log('Données à envoyer:', data);
         
@@ -488,8 +501,41 @@ const updatedAtFr = new Date(formation.updatedAt)
       }
     });
   }
-
 </script>
 
+<!-- Date de dernière mise à jour -->
+<p class="mt-4 text-sm text-gray-500">
+  Dernière mise à jour&nbsp;: {updatedAtFr}
+</p>
+
+<!-- Placeholder pour le futur formulaire -->
+<div id="inscription-placeholder"></div>
+
   </section>
+
+<!-- Lien de test temporaire -->
+<div class="mt-8 p-4 bg-gray-100 rounded-md">
+  <h3 class="text-lg font-semibold mb-2">Liens de test</h3>
+  <ul class="list-disc pl-5">
+    {formation.sessions.map((s) => (
+      <li class="mb-2">
+        <a 
+          href={`/entreprise/login?redirect=${encodeURIComponent('/inscriptions/inscription_session?session=' + s.documentId + '&mode=entreprise')}`}
+          class="text-blue-600 hover:underline"
+        >
+          Connexion entreprise - Session {new Date(s.date).toLocaleDateString('fr-FR')}
+        </a>
+      </li>
+    ))}
+    <li class="mt-4">
+      <a 
+        href="/entreprise/test-entreprise-auth" 
+        class="text-blue-600 hover:underline"
+      >
+        Test authentification entreprise direct
+      </a>
+    </li>
+  </ul>
+</div>
+
 </Layout>

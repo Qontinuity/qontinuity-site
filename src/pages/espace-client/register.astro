@@ -9,11 +9,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 let errorMessage = '';
 let successMessage = '';
 
-// DEBUG : Vérifier l'URL et les paramètres
-console.log('=== DEBUG REGISTER ===');
-console.log('URL complète:', Astro.url.href);
-console.log('Paramètre redirect:', Astro.url.searchParams.get('redirect'));
-console.log('======================');
+const forceEntreprise = Astro.url.searchParams.get('type') === 'entreprise';
 
 if (Astro.request.method === 'POST') {
   try {
@@ -24,7 +20,33 @@ if (Astro.request.method === 'POST') {
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirmPassword') as string;
     const entreprise = formData.get('entreprise') as string;
-    const telephone = formData.get('telephone') as string; // 📞 NOUVEAU
+    const telephone = formData.get('telephone') as string;
+    
+    // Nouveau : récupérer le type de compte
+    const accountType = formData.get('account-type') as string;
+    const isEntreprise = accountType === 'entreprise';
+    
+    // Si c'est un compte entreprise, récupérer les infos entreprise
+    let entrepriseData = null;
+    if (isEntreprise) {
+      entrepriseData = {
+        nom: formData.get('nom-entreprise') as string,
+        siret: formData.get('siret') as string,
+        adresse: [
+          {
+            type: 'paragraph',
+            children: [
+              {
+                type: 'text',
+                text: formData.get('adresse') as string
+              }
+            ]
+          }
+        ],
+        secteur_activite: formData.get('secteur_activite') as string || '',
+        taille: formData.get('taille') as string || ''
+      };
+    }
 
     // Validations
     if (password !== confirmPassword) {
@@ -59,9 +81,51 @@ if (Astro.request.method === 'POST') {
             nom: nom,
             prenom: prenom,
             entreprise: entreprise || '',
-            telephone: telephone || '' // 📞 NOUVEAU : Ajout du téléphone
+            telephone: telephone || '',
+            is_entreprise: isEntreprise
           })
         });
+        
+        // Si c'est un compte entreprise, créer l'entreprise
+        if (isEntreprise && entrepriseData) {
+          const createEntrepriseResponse = await fetch('http://82.112.254.196:1337/api/entreprises', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${data.jwt}`
+            },
+            body: JSON.stringify({
+              data: {
+                nom: entrepriseData.nom,
+                siret: entrepriseData.siret,
+                adresse: entrepriseData.adresse,
+                secteur_activite: entrepriseData.secteur_activite,
+                taille: entrepriseData.taille,
+                responsable: { connect: [data.user.id] }
+              }
+            })
+          });
+          
+          if (createEntrepriseResponse.ok) {
+            const entrepriseResult = await createEntrepriseResponse.json();
+            
+            // Mettre à jour l'utilisateur avec le lien vers l'entreprise
+            await fetch(`http://82.112.254.196:1337/api/users/${data.user.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${data.jwt}`
+              },
+              body: JSON.stringify({
+                rattachement: entrepriseResult.data.id
+              })
+            });
+            
+            // Ajouter l'info entreprise aux données utilisateur
+            data.user.is_entreprise = true;
+            data.user.rattachement = entrepriseResult.data.id;
+          }
+        }
         
         if (updateResponse.ok) {
           // Récupérer les données mises à jour
@@ -73,7 +137,7 @@ if (Astro.request.method === 'POST') {
             nom: updatedUserData.nom || nom,
             prenom: updatedUserData.prenom || prenom,
             entreprise: updatedUserData.entreprise || entreprise,
-            telephone: updatedUserData.telephone || telephone // 📞 NOUVEAU
+            telephone: updatedUserData.telephone || telephone
           };
         } else {
           console.error('Erreur lors de la mise à jour du profil:', await updateResponse.text());
@@ -106,7 +170,11 @@ if (Astro.request.method === 'POST') {
           return Astro.redirect(redirectUrl);
         } else {
           console.log('Pas de redirect, vers dashboard');
-          return Astro.redirect('/espace-client/dashboard');
+          if (isEntreprise) {
+            return Astro.redirect('/espace-client/dashboard');
+          } else {
+            return Astro.redirect('/espace-client/dashboard');
+          }
         }
       } else {
         errorMessage = data.error?.message || 'Erreur lors de la création du compte';
@@ -185,6 +253,116 @@ if (Astro.request.method === 'POST') {
             </div>
           </div>
 
+          <!-- Type de compte -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Type de compte
+            </label>
+            <div class="mt-2">
+              <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                  <input
+                    id="type-personal"
+                    name="account-type"
+                    type="radio"
+                    value="personal"
+                    checked={!forceEntreprise}
+                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <label for="type-personal" class="ml-2 block text-sm text-gray-700">
+                    Compte personnel
+                  </label>
+                </div>
+                <div class="flex items-center">
+                  <input
+                    id="type-entreprise"
+                    name="account-type"
+                    type="radio"
+                    value="entreprise"
+                    checked={forceEntreprise}
+                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <label for="type-entreprise" class="ml-2 block text-sm text-gray-700">
+                    Compte entreprise
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Champs spécifiques entreprise (masqués par défaut) -->
+          <div id="entreprise-fields" style="display: none;" class="space-y-6 p-4 bg-gray-50 rounded-md">
+            <h3 class="text-lg font-medium text-gray-900">Informations entreprise</h3>
+            
+            <div>
+              <label for="nom-entreprise" class="block text-sm font-medium text-gray-700">
+                Nom de l'entreprise *
+              </label>
+              <input
+                id="nom-entreprise"
+                name="nom-entreprise"
+                type="text"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
+            
+            <div>
+              <label for="siret" class="block text-sm font-medium text-gray-700">
+                SIRET *
+              </label>
+              <input
+                id="siret"
+                name="siret"
+                type="text"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
+            
+            <div>
+              <label for="adresse" class="block text-sm font-medium text-gray-700">
+                Adresse *
+              </label>
+              <textarea
+                id="adresse"
+                name="adresse"
+                rows="3"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              ></textarea>
+            </div>
+            
+            <div>
+              <label for="secteur_activite" class="block text-sm font-medium text-gray-700">
+                Secteur d'activité
+              </label>
+              <input
+                id="secteur_activite"
+                name="secteur_activite"
+                type="text"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
+            
+            <div>
+              <label for="taille" class="block text-sm font-medium text-gray-700">
+                Taille de l'entreprise
+              </label>
+              <select
+                id="taille"
+                name="taille"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              >
+                <option value="">-- Sélectionner --</option>
+                <option value="de 1 à 10">TPE (moins de 10 salariés)</option>
+                <option value="de 11 à 50">PME (10 à 50 salariés)</option>
+                <option value="de 51 à 100">PME (51 à 100 salariés)</option>
+                <option value="de 101 à 200">ETI (101 à 200 salariés)</option>
+                <option value="de 201 à 500">ETI (201 à 500 salariés)</option>
+                <option value="de 501 à 1000">Grande entreprise (501 à 1000 salariés)</option>
+                <option value="de 1001 et plus">Grande entreprise (1000+ salariés)</option>
+              </select>
+            </div>
+          </div>
+
           <!-- Email -->
           <div>
             <label for="email" class="block text-sm font-medium text-gray-700">
@@ -203,7 +381,7 @@ if (Astro.request.method === 'POST') {
             </div>
           </div>
 
-          <!-- 📞 NOUVEAU : Téléphone (optionnel) -->
+          <!-- Téléphone (optionnel) -->
           <div>
             <label for="telephone" class="block text-sm font-medium text-gray-700">
               Téléphone
@@ -223,8 +401,8 @@ if (Astro.request.method === 'POST') {
             </p>
           </div>
 
-          <!-- Entreprise (optionnel) -->
-          <div>
+          <!-- Entreprise (optionnel) - uniquement pour les comptes personnels -->
+          <div id="entreprise-field-personal">
             <label for="entreprise" class="block text-sm font-medium text-gray-700">
               Entreprise
             </label>
@@ -291,7 +469,7 @@ if (Astro.request.method === 'POST') {
         <div class="mt-6">
           <div class="relative">
             <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-300" />
+              <div class="w-full border-t border-gray-300"></div>
             </div>
             <div class="relative flex justify-center text-sm">
               <span class="px-2 bg-white text-gray-500">Déjà un compte ?</span>
@@ -310,4 +488,40 @@ if (Astro.request.method === 'POST') {
       </div>
     </div>
   </main>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+      const typePersonal = document.getElementById('type-personal');
+      const typeEntreprise = document.getElementById('type-entreprise');
+      const entrepriseFields = document.getElementById('entreprise-fields');
+      const entrepriseFieldPersonal = document.getElementById('entreprise-field-personal');
+      
+      function toggleEntrepriseFields() {
+        if (typeEntreprise.checked) {
+          entrepriseFields.style.display = 'block';
+          entrepriseFieldPersonal.style.display = 'none';
+          
+          // Rendre les champs obligatoires
+          document.getElementById('nom-entreprise').setAttribute('required', '');
+          document.getElementById('siret').setAttribute('required', '');
+          document.getElementById('adresse').setAttribute('required', '');
+        } else {
+          entrepriseFields.style.display = 'none';
+          entrepriseFieldPersonal.style.display = 'block';
+          
+          // Supprimer l'attribut required
+          document.getElementById('nom-entreprise').removeAttribute('required');
+          document.getElementById('siret').removeAttribute('required');
+          document.getElementById('adresse').removeAttribute('required');
+        }
+      }
+      
+      // Initialiser l'état du formulaire
+      toggleEntrepriseFields();
+      
+      // Ajouter les écouteurs d'événements
+      typePersonal.addEventListener('change', toggleEntrepriseFields);
+      typeEntreprise.addEventListener('change', toggleEntrepriseFields);
+    });
+  </script>
 </BaseLayout>
