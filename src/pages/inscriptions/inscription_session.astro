@@ -23,7 +23,41 @@ console.log('🔒 INSCRIPTION_SESSION - Données utilisateur:', {
   email: user.email
 }); // DEBUG
 
+// Récupérer les données entreprise si l'utilisateur est rattaché à une entreprise
+let entrepriseData = null;
+console.log('🔍 DEBUG - user.is_entreprise:', user.is_entreprise);
+console.log('🔍 DEBUG - user.rattachement:', user.rattachement);
+
+if (user.is_entreprise && user.rattachement) {
+  try {
+    // UTILISER L'API FIND AVEC FILTRE
+    const apiUrl = `http://82.112.254.196:1337/api/entreprises?filters[id][$eq]=${user.rattachement}`;
+    console.log('🔍 DEBUG - URL appelée:', apiUrl);
+    
+    const entrepriseResponse = await fetch(apiUrl, {
+      headers: {
+        'Authorization': `Bearer ${authToken.value}`
+      }
+    });
+    
+    console.log('🔍 DEBUG - Status response:', entrepriseResponse.status);
+    
+    if (entrepriseResponse.ok) {
+      const entrepriseResult = await entrepriseResponse.json();
+      entrepriseData = entrepriseResult.data[0]; // Premier élément
+      console.log('🏢 ENTREPRISE - Données récupérées:', entrepriseData);
+    } else {
+      console.log('🏢 ENTREPRISE - Erreur API:', entrepriseResponse.status);
+    }
+  } catch (error) {
+    console.error('🏢 ENTREPRISE - Erreur récupération:', error);
+  }
+} else {
+  console.log('🏢 ENTREPRISE - User non entreprise ou pas de rattachement');
+}
 const sessionId = Astro.url.searchParams.get('session');
+const modeEntreprise = Astro.url.searchParams.get('mode') === 'entreprise';
+
 
 if (!sessionId) {
   throw new Error('Session non spécifiée');
@@ -263,9 +297,184 @@ const dateFormatee = new Date(session.date).toLocaleDateString('fr-FR', {
       </div>
         
       <!-- Formulaire Entreprise -->
-      <div id="form-entreprise" class="form-section hidden">
-        <p class="text-center text-gray-500">Formulaire entreprise à venir...</p>
+<div id="form-entreprise" class="form-section hidden">
+  <form id="inscription-form-entreprise" class="space-y-6">
+    
+    <!-- Section Entreprise (pré-remplie) -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <h4 class="text-lg font-medium text-gray-900 mb-4">🏢 Informations de votre entreprise</h4>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Nom de l'entreprise</label>
+          <input 
+  type="text" 
+  value={entrepriseData?.nom || 'Entreprise non renseignée'}
+  readonly
+  class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">SIRET</label>
+          <input 
+  type="text" 
+  value={entrepriseData?.siret || 'SIRET non renseigné'}
+  readonly
+  class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+>
+        </div>
       </div>
+      <p class="text-xs text-gray-500 mt-2">
+        📋 Informations de votre entreprise - automatiquement remplies
+      </p>
+    </div>
+
+    <!-- Section Collaborateur -->
+    <div>
+      <h4 class="text-lg font-medium text-gray-900 mb-4">👤 Informations du collaborateur à inscrire</h4>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="collaborateur-nom" class="block text-sm font-medium text-gray-700 mb-2">
+            Nom *
+          </label>
+          <input 
+            type="text" 
+            id="collaborateur-nom" 
+            name="collaborateur-nom" 
+            required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#bf2b34] focus:border-transparent"
+            placeholder="Nom du collaborateur"
+          >
+        </div>
+        
+        <div>
+          <label for="collaborateur-prenom" class="block text-sm font-medium text-gray-700 mb-2">
+            Prénom *
+          </label>
+          <input 
+            type="text" 
+            id="collaborateur-prenom" 
+            name="collaborateur-prenom" 
+            required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#bf2b34] focus:border-transparent"
+            placeholder="Prénom du collaborateur"
+          >
+        </div>
+      </div>
+      
+      <div>
+        <label for="collaborateur-email" class="block text-sm font-medium text-gray-700 mb-2">
+          Email professionnel *
+        </label>
+        <input 
+          type="email" 
+          id="collaborateur-email" 
+          name="collaborateur-email" 
+          required
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#bf2b34] focus:border-transparent"
+          placeholder="email.collaborateur@entreprise.com"
+        >
+      </div>
+      
+      <div>
+        <label for="collaborateur-telephone" class="block text-sm font-medium text-gray-700 mb-2">
+          Téléphone *
+        </label>
+        <input 
+          type="tel" 
+          id="collaborateur-telephone" 
+          name="collaborateur-telephone"
+          required
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#bf2b34] focus:border-transparent"
+          placeholder="06 00 00 00 00"
+        >
+      </div>
+      
+      <div>
+        <label for="collaborateur-fonction" class="block text-sm font-medium text-gray-700 mb-2">
+          Fonction/Poste *
+        </label>
+        <input 
+          type="text" 
+          id="collaborateur-fonction" 
+          name="collaborateur-fonction"
+          required
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#bf2b34] focus:border-transparent"
+          placeholder="Responsable Marketing, Développeur, etc."
+        >
+      </div>
+    </div>
+
+    <!-- Champ Handicap -->
+    <div class="bg-gray-50 rounded-lg p-4">
+      <label class="block text-sm font-medium text-gray-700 mb-3">
+        Le collaborateur est-il en situation de handicap (PSH) ou a-t-il besoin de dispositifs particuliers d'accompagnement lors de la formation ?
+      </label>
+      
+      <div class="flex items-center space-x-4">
+        <span id="handicap-label-non-entreprise" class="text-sm font-medium text-[#bf2b34]">Non</span>
+        
+        <button type="button" id="handicap-toggle-entreprise" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors bg-gray-300" role="switch">
+          <span class="translate-x-1 inline-block h-4 w-4 transform rounded-full bg-white transition-transform"></span>
+        </button>
+        
+        <span id="handicap-label-oui-entreprise" class="text-sm font-medium text-gray-400">Oui</span>
+      </div>
+      
+      <input type="hidden" id="handicap-entreprise" name="handicap-entreprise" value="non">
+    </div>
+
+    <!-- Attestation entreprise -->
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+      <div class="flex items-start space-x-3">
+        <input 
+          type="checkbox" 
+          id="entreprise-attestation" 
+          name="entreprise-attestation" 
+          required
+          class="mt-1 h-4 w-4 text-[#bf2b34] focus:ring-[#bf2b34] border-gray-300 rounded"
+        >
+        <div class="flex-1">
+          <label for="entreprise-attestation" class="block text-sm font-medium text-gray-900 cursor-pointer">
+            En tant que représentant de l'entreprise, j'atteste que nous bénéficions d'un délai légal de rétractation de 14 jours après cette inscription *
+          </label>
+          <p class="text-xs text-gray-600 mt-2">
+            Délai de rétractation valide jusqu'au <span id="date-retractation-entreprise" class="font-medium"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Engagement paiement entreprise -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+      <div class="flex items-start space-x-3">
+        <input 
+          type="checkbox" 
+          id="engagement-entreprise" 
+          name="engagement-entreprise" 
+          required
+          class="mt-1 h-4 w-4 text-[#bf2b34] focus:ring-[#bf2b34] border-gray-300 rounded"
+        >
+        <div class="flex-1">
+          <label for="engagement-entreprise" class="block text-sm font-medium text-gray-900 cursor-pointer">
+            Notre entreprise s'engage à procéder au règlement de <span class="font-semibold text-[#bf2b34]">{session.formation.prix_ttc} €</span> dans les 48 heures suivant la réception de la facture. Un compte sera automatiquement créé pour le collaborateur avec un mot de passe temporaire envoyé par email. *
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bouton de soumission -->
+    <div class="pt-4">
+      <button 
+        type="submit"
+        class="w-full bg-[#bf2b34] text-white px-6 py-4 rounded-lg hover:bg-[#a1242d] transition font-semibold text-lg"
+      >
+        Inscrire le collaborateur
+      </button>
+    </div>
+  </form>
+</div>
     </div>
 
   </section>
@@ -310,7 +519,12 @@ const dateFormatee = new Date(session.date).toLocaleDateString('fr-FR', {
     }
     
     // État initial : Personnel actif
-    setActiveToggle(btnPersonnel, btnEntreprise, formPersonnel, formEntreprise);
+    const modeEntrepriseDetecte = window.location.search.includes('mode=entreprise');
+if (modeEntrepriseDetecte) {
+  setActiveToggle(btnEntreprise, btnPersonnel, formEntreprise, formPersonnel);
+} else {
+  setActiveToggle(btnPersonnel, btnEntreprise, formPersonnel, formEntreprise);
+}
     
     // Événements toggle financement
     btnPersonnel.addEventListener('click', () => {
