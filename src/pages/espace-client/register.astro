@@ -194,7 +194,7 @@ if (Astro.request.method === 'POST') {
   title="Créer un compte - Espace Client Qontinuity"
   description="Créez votre compte Qontinuity pour accéder à vos formations IA."
 >
-  <main class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+  <main class="min-h-screen bg-gray-50 flex flex-col justify-center pt-24 pb-12 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
       <div class="text-center">
         <h1 class="text-3xl font-bold text-gray-900">Créer un compte</h1>
@@ -524,4 +524,23 @@ if (Astro.request.method === 'POST') {
       typeEntreprise.addEventListener('change', toggleEntrepriseFields);
     });
   </script>
+
+<style>
+  /* Personnalisation des radio buttons */
+  input[type="radio"] {
+    accent-color: #bf2b34;
+  }
+  
+  /* Pour une meilleure compatibilité navigateurs */
+  input[type="radio"]:checked {
+    background-color: #bf2b34;
+    border-color: #bf2b34;
+  }
+  
+  input[type="radio"]:focus {
+    ring-color: #bf2b34;
+    border-color: #bf2b34;
+  }
+</style>
+
 </BaseLayout>
